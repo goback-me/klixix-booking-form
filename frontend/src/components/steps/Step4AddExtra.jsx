@@ -1,0 +1,51 @@
+import { useState } from 'preact/hooks'
+import ServiceCard from '../ServiceCard'
+
+export default function Step4AddExtra() {
+  const [selectedExtras, setSelectedExtras] = useState([])
+
+  const services = [
+    { id: 1, name: 'Tyre rotation & balancing', price: '$ 10.22', image: '/tyre-rotation.svg' },
+    { id: 2, name: 'Engine flush plus', price: '$ 12.10', image: '/Engine flush plus.svg' },
+    { id: 3, name: 'A/C clean & deodoriser', price: '$ 8.12', image: '/AC clean & deodoriser.svg' },
+    { id: 4, name: 'Wiper blade replacement', price: '$ 6.10', image: '/Wiper blade replacement.svg' },
+    { id: 5, name: 'A/C re-gas & full service', price: '$ 8.22', image: '/AC re-gas & full service.svg' },
+    { id: 6, name: 'Tyre puncture repair', price: '$ 8.22', image: '/Tyre puncture repair.svg' },
+    { id: 7, name: 'Brake calipers system', price: '$ 8.22', image: '/Brake calibers system.svg' },
+    { id: 8, name: 'Oil and filter change', price: '$ 8.22', image: '/Oil and filter change.svg' },
+    { id: 9, name: 'Body and Aesthetics', price: '$ 20', image: '/Body and Aesthetics.svg' },
+    { id: 10, name: 'Exhaust system servicing', price: '$ 13.22', image: '/Exhaust system servicing.svg' },
+  ]
+
+  const toggleService = (id) => {
+    if (selectedExtras.includes(id)) {
+      setSelectedExtras(selectedExtras.filter((itemId) => itemId !== id))
+    } else {
+      setSelectedExtras([...selectedExtras, id])
+    }
+  }
+
+  return (
+    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Book your vehicle service</h2>
+        <p className="text-gray-600 mb-6 break-words">Experience premium automotive care with our expert technicians</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+          {services.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+              selected={selectedExtras.includes(service.id)}
+              onSelect={() => toggleService(service.id)}
+              variant="compact"
+              containerHeight="h-20"
+              imageWidth={90}
+              imageHeight={60}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
