@@ -22,21 +22,21 @@ const morningSlots = [
   { label: '8:30 AM', available: true },
   { label: '9:00 AM', available: false },
   { label: '9:30 AM', available: false },
-  { label: '10:00 AM', available: false, disabled: true },
-  { label: '10:30 AM', available: false, disabled: true },
+  { label: '10:00 AM', available: true },
+  { label: '10:30 AM',  available: true },
   { label: '11:00 AM', available: true },
   { label: '11:30 AM', available: true },
   { label: '12:00 PM', available: true },
 ]
 
 const afternoonSlots = [
-  { label: '1:00 PM', available: false, disabled: true },
-  { label: '1:30 PM', available: false, disabled: true },
+  { label: '1:00 PM', available: true },
+  { label: '1:30 PM',  available: true},
   { label: '2:00 PM', available: true },
   { label: '2:30 PM', available: true },
   { label: '3:00 PM', available: true },
   { label: '3:30 PM', available: true },
-  { label: '4:00 PM', available: false, disabled: true },
+  { label: '4:00 PM', available: true},
   { label: '4:30 PM', available: true },
   { label: '5:00 PM', available: true },
 ]
