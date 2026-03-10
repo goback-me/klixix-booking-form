@@ -4,6 +4,8 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import 'dotenv/config'
 import unavailableDaysRouter from './routes/unavailableDays.js'
+import createBookingRouter from './routes/createBooking.js'
+import sendWebhookRouter from './routes/sendWebhook.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -31,6 +33,8 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api', unavailableDaysRouter)
+app.use('/api', createBookingRouter)
+app.use('/api', sendWebhookRouter)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

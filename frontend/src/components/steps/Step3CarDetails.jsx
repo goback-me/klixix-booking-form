@@ -1,21 +1,13 @@
 import { useState } from 'preact/hooks'
 
-export default function Step3CarDetails() {
+export default function Step3CarDetails({ bookingData, updateBookingData }) {
   const [mobileStep, setMobileStep] = useState(1)
-  const [details, setDetails] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    make: '',
-    model: '',
-    year: '',
-    registration: '',
-    state: '',
-    additionalInfo: '',
-  })
+  const details = bookingData.carDetails
+
+  const auStates = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
 
   const handleChange = (field, value) => {
-    setDetails({ ...details, [field]: value })
+    updateBookingData('carDetails', { ...details, [field]: value })
   }
 
   const goNextMobileStep = () => {
@@ -136,12 +128,16 @@ export default function Step3CarDetails() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-500 text-gray-900 mb-2">State</label>
-                <input
-                  type="text"
+                <select
                   value={details.state}
                   onChange={(e) => handleChange('state', e.currentTarget.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-orange-500"
-                />
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white"
+                >
+                  <option value="">Select state</option>
+                  {auStates.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -272,12 +268,16 @@ export default function Step3CarDetails() {
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">State</label>
-            <input
-              type="text"
+            <select
               value={details.state}
               onChange={(e) => handleChange('state', e.currentTarget.value)}
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-orange-500"
-            />
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white"
+            >
+              <option value="">Select state</option>
+              {auStates.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
 
           <div className="md:col-span-2">

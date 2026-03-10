@@ -123,15 +123,26 @@ function SlotButton({ slot, selected, onClick }) {
   )
 }
 
-export default function Step2DateTime() {
+export default function Step2DateTime({ bookingData, updateBookingData }) {
   const nowInAu = useMemo(() => getAustralianDateParts(), [])
   const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
 
   const [viewedMonth, setViewedMonth] = useState(nowInAu.month)
   const [viewedYear, setViewedYear] = useState(nowInAu.year)
-  const [selectedDate, setSelectedDate] = useState('')
-  const [selectedTime, setSelectedTime] = useState('')
-  const [isFlexible, setIsFlexible] = useState(false)
+  const selectedDate = bookingData.date || ''
+  const selectedTime = bookingData.time || ''
+  const isFlexible = bookingData.isFlexible || false
+  const setSelectedDate = (val) => updateBookingData('date', val)
+  const setSelectedTime = (val) => updateBookingData('time', val)
+  const setIsFlexible = (val) => {
+    const newVal = typeof val === 'function' ? val(isFlexible) : val
+    updateBookingData('isFlexible', newVal)
+    if (newVal) {
+      const allSlots = [...morningSlots, ...afternoonSlots]
+      const nearest = allSlots.find((s) => s.available && !s.disabled)
+      if (nearest) updateBookingData('time', nearest.label)
+    }
+  }
   const [blockedDates, setBlockedDates] = useState(new Set([todayYmd]))
   const [loadingBlockedDays, setLoadingBlockedDays] = useState(true)
 
@@ -146,7 +157,7 @@ export default function Step2DateTime() {
     async function fetchUnavailableDays() {
       setLoadingBlockedDays(true)
       try {
-        const response = await fetch(`/api/unavailable-days?workshop=${encodeURIComponent(workshopId)}&in_days=180`)
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/unavailable-days?workshop=${encodeURIComponent(workshopId)}&in_days=180`)
         if (!response.ok) {
           let errorDetail = `API request failed: ${response.status}`
           try {

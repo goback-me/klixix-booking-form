@@ -1,8 +1,6 @@
-import { useState } from 'preact/hooks'
 import ServiceCard from '../ServiceCard'
 
-export default function Step4AddExtra() {
-  const [selectedExtras, setSelectedExtras] = useState([])
+export default function Step4AddExtra({ bookingData, updateBookingData }) {
 
   const services = [
     { id: 1, name: 'Tyre rotation & balancing', price: '$ 10.22', image: '/tyre-rotation.svg' },
@@ -17,11 +15,13 @@ export default function Step4AddExtra() {
     { id: 10, name: 'Exhaust system servicing', price: '$ 13.22', image: '/Exhaust system servicing.svg' },
   ]
 
+  const selectedExtras = bookingData.extras || []
+
   const toggleService = (id) => {
     if (selectedExtras.includes(id)) {
-      setSelectedExtras(selectedExtras.filter((itemId) => itemId !== id))
+      updateBookingData('extras', selectedExtras.filter((itemId) => itemId !== id))
     } else {
-      setSelectedExtras([...selectedExtras, id])
+      updateBookingData('extras', [...selectedExtras, id])
     }
   }
 

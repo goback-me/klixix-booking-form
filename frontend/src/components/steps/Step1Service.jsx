@@ -1,8 +1,6 @@
-import { useState } from 'preact/hooks'
 import ServiceCard from '../ServiceCard'
 
-export default function Step1Service() {
-  const [selectedServiceId, setSelectedServiceId] = useState(null)
+export default function Step1Service({ bookingData, updateBookingData }) {
 
   const services = [
     {
@@ -42,8 +40,8 @@ export default function Step1Service() {
                 <ServiceCard
                   key={service.id}
                   service={service}
-                  selected={selectedServiceId === service.id}
-                  onSelect={() => setSelectedServiceId(service.id)}
+                  selected={bookingData.service?.id === service.id}
+                  onSelect={() => updateBookingData('service', service)}
                     containerHeight="h-45 md:h-45"
                 />
               ))}        </div>     </div>

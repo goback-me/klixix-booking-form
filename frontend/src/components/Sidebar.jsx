@@ -4,8 +4,8 @@ import { motion } from 'motion/react'
 export default function Sidebar({ steps, currentStep, allCompleted = false }) {
   return (
     <>
-      {/* ── Mobile horizontal stepper ── */}
-      <div className="flex md:hidden items-center justify-between px-4 py-3 bg-white border-b border-gray-200 overflow-x-auto flex-shrink-0">
+      {/* ── Mobile & Tablet horizontal stepper ── */}
+      <div className="flex lg:hidden items-center px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {steps.map((step, index) => {
           const isCompleted = allCompleted || index < currentStep
           const isCurrent = !allCompleted && index === currentStep
@@ -13,8 +13,8 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
           const showActiveConnector = allCompleted || index < currentStep || index === currentStep
 
           return (
-            <div key={index} className="flex items-center">
-              <div className="flex flex-col items-center">
+            <div key={index} className={`flex items-center ${isLast ? '' : 'flex-1'}`}>
+              <div className="flex flex-col items-center shrink-0">
                 <motion.div
                   initial={{ scale: 0.92, opacity: 0.9 }}
                   animate={isCurrent
@@ -51,20 +51,17 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               </div>
 
               {!isLast && (
-                <div className="flex items-center mx-1.5 gap-0.5 mt-[-12px]">
-                  {Array.from({ length: 4 }).map((_, dotIndex) => (
-                    <motion.span
-                      key={`m-${index}-${dotIndex}`}
-                      className={`h-1 w-1 rounded-full ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
-                      initial={{ opacity: 0.35, scale: 0.85 }}
-                      animate={showActiveConnector
-                        ? { opacity: [0.45, 1, 0.45], scale: [0.85, 1, 0.85] }
-                        : { opacity: 0.35, scale: 0.85 }}
-                      transition={showActiveConnector
-                        ? { duration: 1.2, repeat: Infinity, delay: dotIndex * 0.08, ease: 'easeInOut' }
-                        : { duration: 0.2 }}
-                    />
-                  ))}
+                <div className="flex-1 flex items-center mx-2 mt-[-12px]">
+                  <motion.div
+                    className={`h-0.5 w-full rounded-full ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
+                    initial={{ opacity: 0.35 }}
+                    animate={showActiveConnector
+                      ? { opacity: [0.5, 1, 0.5] }
+                      : { opacity: 0.35 }}
+                    transition={showActiveConnector
+                      ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
+                      : { duration: 0.2 }}
+                  />
                 </div>
               )}
             </div>
@@ -73,7 +70,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
       </div>
 
       {/* ── Desktop vertical sidebar ── */}
-      <div className="hidden md:flex md:w-84 bg-white p-6 md:p-8 flex-col flex-shrink-0 min-h-0">
+      <div className="hidden lg:flex lg:w-84 bg-white p-6 lg:p-8 flex-col flex-shrink-0 min-h-0">
         <div className="sidebar-styling p-6 flex flex-col h-full min-h-0">
           <nav className="flex-1 overflow-y-auto pr-1">
             {steps.map((step, index) => {

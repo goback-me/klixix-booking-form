@@ -1,14 +1,6 @@
-import { useState } from 'preact/hooks'
 import ServiceCard from '../ServiceCard'
 
-export default function Step0Workshop() {
-  const [selectedService, setSelectedService] = useState(() => {
-    if (typeof window === 'undefined') return null
-    const savedWorkshop = window.localStorage.getItem('selectedWorkshop')
-    if (savedWorkshop === 'hendra') return 1
-    if (savedWorkshop === 'woolloongabba') return 2
-    return null
-  })
+export default function Step0Workshop({ bookingData, updateBookingData }) {
 
   const services = [
     {
@@ -44,9 +36,9 @@ export default function Step0Workshop() {
           <ServiceCard
             key={service.id}
             service={service}
-            selected={selectedService === service.id}
+            selected={bookingData.workshop?.id === service.id}
             onSelect={() => {
-              setSelectedService(service.id)
+              updateBookingData('workshop', service)
               if (typeof window !== 'undefined') {
                 window.localStorage.setItem('selectedWorkshop', service.workshopId)
               }
