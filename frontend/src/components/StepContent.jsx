@@ -7,7 +7,7 @@ import Step5Summary from './steps/Step5Summary'
 
 const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step4AddExtra, Step5Summary]
 
-export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, submitting, submitError, bookingData, updateBookingData }) {
+export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, submitting, submitError, validationError, bookingData, updateBookingData }) {
   const CurrentStep = steps[step]
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -15,11 +15,14 @@ export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, s
   return (
     <>
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-        <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} />
+        <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} validationError={validationError} />
       </div>
       <div className="border-t border-gray-200 p-4 sm:p-6 md:p-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0">
         {submitError && (
           <p className="w-full text-sm text-red-500 mb-1">{submitError}</p>
+        )}
+        {validationError && (
+          <p className="w-full text-sm text-red-500 mb-1">{validationError.message}</p>
         )}
         <button
           onClick={onPrev}

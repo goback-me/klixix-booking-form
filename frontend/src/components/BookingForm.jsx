@@ -50,14 +50,48 @@ const initialBookingData = {
   extras: [],
 }
 
+function validateStep(step, bookingData) {
+  switch (step) {
+    case 0:
+      if (!bookingData.workshop) return { message: 'Please select a workshop' }
+      return null
+    case 1:
+      if (!bookingData.service) return { message: 'Please select a service' }
+      return null
+    case 2:
+      if (!bookingData.date) return { message: 'Please select a date' }
+      if (!bookingData.time) return { message: 'Please select a time slot' }
+      return null
+    case 3: {
+      const d = bookingData.carDetails
+      const missing = []
+      if (!d.fullName.trim()) missing.push('fullName')
+      if (!d.email.trim()) missing.push('email')
+      if (!d.phone.trim()) missing.push('phone')
+      if (!d.make.trim()) missing.push('make')
+      if (!d.model.trim()) missing.push('model')
+      if (!d.year.toString().trim()) missing.push('year')
+      if (!d.registration.trim()) missing.push('registration')
+      if (missing.length) return { message: 'Please fill in all required fields', fields: missing }
+      return null
+    }
+    case 4:
+      return null // Add-ons are optional
+    default:
+      return null
+  }
+}
+
 export default function BookingForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [validationError, setValidationError] = useState(null)
 
   const updateBookingData = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
+    setValidationError(null)
   }
 
   const steps = ['Workshop', 'Service', 'Date & time', 'Car details', 'Add-ons', 'Summary']
@@ -66,10 +100,17 @@ export default function BookingForm() {
   const sidebarAllCompleted = currentStep >= progressSteps.length
 
   const nextStep = () => {
+    const error = validateStep(currentStep, bookingData)
+    if (error) {
+      setValidationError(error)
+      return
+    }
+    setValidationError(null)
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
   const prevStep = () => {
+    setValidationError(null)
     setCurrentStep((prev) => Math.max(prev - 1, 0))
   }
 
@@ -77,6 +118,7 @@ export default function BookingForm() {
     setCurrentStep(0)
     setBookingData(initialBookingData)
     setSubmitError('')
+    setValidationError(null)
   }
 
   const submitBooking = async () => {
@@ -146,6 +188,7 @@ export default function BookingForm() {
           onSubmit={submitBooking}
           submitting={submitting}
           submitError={submitError}
+          validationError={validationError}
           bookingData={bookingData}
           updateBookingData={updateBookingData}
         />
