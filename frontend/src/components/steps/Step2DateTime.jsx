@@ -214,7 +214,7 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
   )
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+    <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 break-words">Drop off date &amp; time</h2>

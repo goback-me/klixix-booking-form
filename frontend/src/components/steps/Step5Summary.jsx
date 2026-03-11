@@ -32,7 +32,7 @@ export default function Step5Summary({ bookingData }) {
   const workshopAddress = workshop?.workshopId ? (workshopAddresses[workshop.workshopId] || workshop.address) : 'Not selected'
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+    <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 text-center mb-3" style={{ fontFamily: 'var(--font-display)' }}>
           Booking summary!

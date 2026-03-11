@@ -14,10 +14,10 @@ export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, s
 
   return (
     <>
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-y-hidden overflow-x-hidden">
         <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} validationError={validationError} />
       </div>
-      <div className="border-t border-gray-200 p-4 sm:p-6 md:p-8 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0">
+      <div className="border-t border-gray-200 p-4 sm:p-5 md:p-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0">
         {submitError && (
           <p className="w-full text-sm text-red-500 mb-1">{submitError}</p>
         )}

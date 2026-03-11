@@ -102,8 +102,8 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                     </motion.div>
 
                     {!isLast && (
-                      <div className="py-2 h-20 flex flex-col justify-between">
-                        {Array.from({ length: 9 }).map((_, dotIndex) => (
+                      <div className="py-1.5 h-14 flex flex-col justify-between">
+                        {Array.from({ length: 6 }).map((_, dotIndex) => (
                           <motion.span
                             key={`${index}-${dotIndex}`}
                             className={`h-1.5 w-1.5 rounded-full ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}

@@ -4,7 +4,7 @@ export default function ServiceCard({
     onSelect,
     imageWidth = 200,
     imageHeight = 200,
-    containerHeight = 'h-52 md:h-82',
+    containerHeight = 'aspect-[4/3]',
     variant = 'default',
 }) {
     // Handle both string and object formats
@@ -32,7 +32,7 @@ export default function ServiceCard({
             style={{ borderColor: selected ? (isCompact ? '#1d9bf0' : 'var(--color-primary)') : '#e5e7eb' }}
         >
             {(serviceImage || isCompact) && (
-                <div className={`relative overflow-hidden w-full ${isCompact ? 'h-20 bg-gray-50 rounded-lg flex items-center justify-center' : `bg-gray-200 ${containerHeight}`} flex-shrink-0`}>
+                <div className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}>
                     {serviceImage ? (
                         <img
                             src={serviceImage}

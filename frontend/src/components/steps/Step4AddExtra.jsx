@@ -26,12 +26,12 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+    <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Book your vehicle service</h2>
-        <p className="text-gray-600 mb-6 break-words">Experience premium automotive care with our expert technicians</p>
+        <p className="text-gray-600 mb-4 break-words">Experience premium automotive care with our expert technicians</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           {services.map((service) => (
             <ServiceCard
               key={service.id}
@@ -39,7 +39,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
               selected={selectedExtras.includes(service.id)}
               onSelect={() => toggleService(service.id)}
               variant="compact"
-              containerHeight="h-20"
+              containerHeight="h-20 card-img-compact"
               imageWidth={90}
               imageHeight={60}
             />

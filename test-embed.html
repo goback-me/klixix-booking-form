@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CarOne Booking - Embed Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    header {
+      background: #111;
+      color: #fff;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.5rem; }
+    header nav a {
+      color: #fff;
+      text-decoration: none;
+      margin-left: 24px;
+      font-size: 0.95rem;
+    }
+    .hero {
+      background: linear-gradient(135deg, #FF4D24 0%, #F16622 100%);
+      color: #fff;
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .hero h2 { font-size: 2.5rem; margin-bottom: 16px; }
+    .hero p { font-size: 1.15rem; opacity: 0.9; margin-bottom: 32px; }
+    .hero button {
+      background: #fff;
+      color: #FF4D24;
+      border: none;
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .hero button:hover { transform: scale(1.05); }
+    .content {
+      max-width: 900px;
+      margin: 60px auto;
+      padding: 0 20px;
+    }
+    .content h3 { font-size: 1.8rem; margin-bottom: 16px; }
+    .content p { line-height: 1.7; color: #555; margin-bottom: 20px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin: 40px 0;
+    }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .card h4 { font-size: 1.2rem; margin-bottom: 8px; }
+    .card p { font-size: 0.95rem; color: #666; }
+    .cta-section {
+      text-align: center;
+      padding: 60px 20px;
+      background: #fff;
+    }
+    .cta-section h3 { font-size: 1.8rem; margin-bottom: 12px; }
+    .cta-section p { color: #666; margin-bottom: 24px; }
+    .cta-section button {
+      background: #FF4D24;
+      color: #fff;
+      border: none;
+      padding: 14px 36px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .cta-section button:hover { transform: scale(1.05); }
+    footer {
+      background: #111;
+      color: #888;
+      text-align: center;
+      padding: 24px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>CarOne Automotive</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Services</a>
+      <a href="#">About</a>
+      <a href="#" data-action="open-booking">Book Now</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Premium Vehicle Servicing</h2>
+    <p>Expert technicians, quality parts, and exceptional service — all under one roof.</p>
+    <button data-action="open-booking">Book a Service</button>
+  </section>
+
+  <section class="content">
+    <h3>Our Services</h3>
+    <p>From routine maintenance to complex repairs, we've got you covered with transparent pricing and fast turnaround.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>General Service</h4>
+        <p>Full vehicle inspection, oil change, filter replacement and more.</p>
+      </div>
+      <div class="card">
+        <h4>Vehicle Repair</h4>
+        <p>Diagnostics and repair for engine, brakes, suspension and electrical systems.</p>
+      </div>
+      <div class="card">
+        <h4>Roadworthy Certificate</h4>
+        <p>Quick and thorough safety inspections for registration transfers.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h3>Ready to book?</h3>
+    <p>Select your preferred workshop, service, and time slot in just a few clicks.</p>
+    <button data-action="open-booking">Book Your Service Now</button>
+  </section>
+
+  <footer>
+    &copy; 2026 CarOne Automotive. This is a test page for embed integration.
+  </footer>
+
+  <!-- Booking embed script (uses local dev server) -->
+  <script>
+    // Override FORM_URL for local testing before the embed script loads
+    // The embed script uses a production URL by default, so we patch it here
+  </script>
+  <script src="./frontend/public/booking-embed.js"></script>
+  <script>
+    // For local testing: re-point the iframe to http://localhost:5173
+    (function() {
+      var LOCAL_URL = 'http://localhost:5173';
+      var origOpen = window.openBooking;
+      window.openBooking = function() {
+        origOpen();
+        var frame = document.getElementById('carone-booking-frame');
+        if (frame && frame.src.indexOf('localhost') === -1) {
+          frame.src = LOCAL_URL;
+        }
+      };
+    })();
+  </script>
+
+</body>
+</html>

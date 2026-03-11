@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  var FORM_URL = 'https://klixix-booking-form.vercel.app';
+  // var FORM_URL = 'https://klixix-booking-form.vercel.app';
+  var FORM_URL = 'http://localhost:5173';
   var overlay, iframe, isOpen = false;
 
   function createOverlay() {
@@ -40,7 +41,7 @@
       '  }',
       '  #carone-booking-frame {',
       '    max-width: 960px;',
-      '    max-height: 95vh;',
+      '    max-height: 96vh;',
       '    border-radius: 16px;',
       '    box-shadow: 0 24px 80px rgba(0,0,0,0.25);',
       '  }',
@@ -51,7 +52,7 @@
       '  }',
       '  #carone-booking-frame {',
       '    max-width: 1100px;',
-      '    max-height: 90vh;',
+      '    max-height: 95vh;',
       '  }',
       '}',
     ].join('\n');

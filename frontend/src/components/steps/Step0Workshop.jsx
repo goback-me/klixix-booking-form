@@ -26,17 +26,18 @@ export default function Step0Workshop({ bookingData, updateBookingData }) {
   ]
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+    <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl sm:text-3xl md:text-4xl mb-2 text-primary-dark break-words">Book your vehicle service</h2>
-        <p className="text-gray-600 mb-6 md:mb-8 break-words">Experience premium automotive care with our expert technicians</p>
-        <div className="mb-4 md:mb-8 border-t-1 border-gray-300"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 auto-rows-max">
+        <p className="text-gray-600 mb-4 md:mb-5 break-words">Experience premium automotive care with our expert technicians</p>
+        <div className="mb-3 md:mb-5 border-t-1 border-gray-300"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 auto-rows-max">
         {services.map((service) => (
           <ServiceCard
             key={service.id}
             service={service}
             selected={bookingData.workshop?.id === service.id}
+            containerHeight="aspect-[4/3] card-img-responsive"
             onSelect={() => {
               updateBookingData('workshop', service)
               if (typeof window !== 'undefined') {

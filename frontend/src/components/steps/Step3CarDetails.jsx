@@ -15,12 +15,12 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
     }`
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 flex flex-col min-w-0">
+    <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 break-words">Vehicle &amp; contact details</h2>
-        <p className="text-gray-600 mb-6 break-words">Tell us about your vehicle and how to reach you.</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Vehicle &amp; contact details</h2>
+        <p className="text-gray-600 mb-4 break-words">Tell us about your vehicle and how to reach you.</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
               Full name <span className="text-orange-500">*</span>
@@ -129,7 +129,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
           <div className="md:col-span-2">
             <label className="block text-sm font-500 text-gray-900 mb-2">Additional information</label>
             <textarea
-              rows={4}
+              rows={3}
               placeholder="Any specific concerns or requests..."
               value={details.additionalInfo}
               onChange={(e) => handleChange('additionalInfo', e.currentTarget.value)}
