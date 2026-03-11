@@ -1,5 +1,4 @@
-/* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+/* Fonts loaded via index.html preconnect + async link */
 
 @import "tailwindcss";
 
@@ -193,4 +192,38 @@ box-shadow: 0 0 32px 0 rgba(0, 0, 0, 0.08);
   .card-img-compact {
     height: clamp(48px, 8vh, 80px) !important;
   }
+}
+
+/* GPU-composited stepper pulse animations (avoids non-composited animation warnings) */
+@keyframes stepper-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes stepper-pulse-lg {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes connector-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.stepper-active {
+  animation: stepper-pulse 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+.stepper-active-lg {
+  animation: stepper-pulse-lg 1.2s ease-in-out infinite;
+  will-change: transform;
+}
+.dot-active {
+  animation: dot-pulse 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.connector-active {
+  animation: connector-pulse 1.2s ease-in-out infinite;
+  will-change: opacity;
 }

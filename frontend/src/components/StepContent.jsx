@@ -24,6 +24,7 @@ export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, s
             exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="h-full"
+            style={{ willChange: 'transform, opacity' }}
           >
             <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} validationError={validationError} />
           </motion.div>

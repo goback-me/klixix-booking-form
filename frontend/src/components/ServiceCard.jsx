@@ -29,6 +29,7 @@ export default function ServiceCard({
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.97 }}
             className="h-full"
+            style={{ willChange: 'transform, opacity' }}
         >
         <button
             onClick={onSelect}

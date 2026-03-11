@@ -15,15 +15,10 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
           return (
             <div key={index} className={`flex items-center ${isLast ? '' : 'flex-1'}`}>
               <div className="flex flex-col items-center shrink-0">
-                <motion.div
-                  initial={{ scale: 0.92, opacity: 0.9 }}
-                  animate={isCurrent
-                    ? { scale: [1, 1.06, 1], opacity: 1 }
-                    : { scale: 1, opacity: 1 }}
-                  transition={isCurrent
-                    ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
-                    : { duration: 0.2 }}
+                <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center border transition ${
+                    isCurrent ? 'stepper-active' : ''
+                  } ${
                     isCompleted
                       ? 'bg-green-100 border-green-500 text-green-600'
                       : isCurrent
@@ -46,7 +41,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                       </motion.span>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </div>
                 <span
                   className={`text-[10px] mt-1 whitespace-nowrap ${
                     isCompleted
@@ -63,16 +58,10 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               {!isLast && (
                 <div className="flex-1 flex items-center justify-between mx-2 mt-[-12px] gap-[3px]">
                   {Array.from({ length: 4 }).map((_, dotIndex) => (
-                    <motion.span
+                    <span
                       key={`m-${index}-${dotIndex}`}
-                      className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
-                      initial={{ opacity: 0.35, scale: 0.85 }}
-                      animate={showActiveConnector
-                        ? { opacity: [0.45, 1, 0.45], scale: [0.85, 1, 0.85] }
-                        : { opacity: 0.35, scale: 0.85 }}
-                      transition={showActiveConnector
-                        ? { duration: 1.2, repeat: Infinity, delay: dotIndex * 0.08, ease: 'easeInOut' }
-                        : { duration: 0.2 }}
+                      className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${showActiveConnector ? 'bg-green-500 dot-active' : 'bg-gray-300 opacity-35'}`}
+                      style={showActiveConnector ? { animationDelay: `${dotIndex * 0.08}s` } : undefined}
                     />
                   ))}
                 </div>
@@ -95,15 +84,10 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               return (
                 <div key={index} className="flex gap-3">
                   <div className="flex flex-col items-center">
-                    <motion.div
-                      initial={{ scale: 0.92, opacity: 0.9 }}
-                      animate={isCurrent
-                        ? { scale: [1, 1.04, 1], opacity: 1 }
-                        : { scale: 1, opacity: 1 }}
-                      transition={isCurrent
-                        ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
-                        : { duration: 0.2 }}
+                    <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center border transition ${
+                        isCurrent ? 'stepper-active-lg' : ''
+                      } ${
                         isCompleted
                           ? 'bg-green-100 border-green-500 text-green-600'
                           : isCurrent
@@ -112,21 +96,15 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                       }`}
                     >
                       {isCompleted ? <Check size={16} strokeWidth={2.2} /> : isCurrent ? <Plus size={16} strokeWidth={2.2} /> : <span className="text-xs font-medium">{index + 1}</span>}
-                    </motion.div>
+                    </div>
 
                     {!isLast && (
                       <div className="py-1.5 h-14 flex flex-col justify-between">
                         {Array.from({ length: 6 }).map((_, dotIndex) => (
-                          <motion.span
+                          <span
                             key={`${index}-${dotIndex}`}
-                            className={`h-1.5 w-1.5 rounded-full ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
-                            initial={{ opacity: 0.35, scale: 0.85 }}
-                            animate={showActiveConnector
-                              ? { opacity: [0.45, 1, 0.45], scale: [0.85, 1, 0.85] }
-                              : { opacity: 0.35, scale: 0.85 }}
-                            transition={showActiveConnector
-                              ? { duration: 1.2, repeat: Infinity, delay: dotIndex * 0.06, ease: 'easeInOut' }
-                              : { duration: 0.2 }}
+                            className={`h-1.5 w-1.5 rounded-full ${showActiveConnector ? 'bg-green-500 dot-active' : 'bg-gray-300 opacity-35'}`}
+                            style={showActiveConnector ? { animationDelay: `${dotIndex * 0.06}s` } : undefined}
                           />
                         ))}
                       </div>

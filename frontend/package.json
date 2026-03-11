@@ -7,8 +7,6 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@preact/signals": "^2.8.2",
-		"ky": "^1.14.3",
 		"lucide-react": "^0.577.0",
 		"motion": "^12.35.2",
 		"preact": "^10.26.9"

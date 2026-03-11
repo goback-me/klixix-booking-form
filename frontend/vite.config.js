@@ -7,6 +7,16 @@ export default defineConfig({
     preact(),
     tailwindcss(),
   ],
+  build: {
+    target: 'es2020',
+    minify: 'esbuild',
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {
