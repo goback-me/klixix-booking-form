@@ -20,8 +20,8 @@ const monthNames = [
 const morningSlots = [
   { label: '8:00 AM', available: true },
   { label: '8:30 AM', available: true },
-  { label: '9:00 AM', available: false },
-  { label: '9:30 AM', available: false },
+  { label: '9:00 AM', available: true },
+  { label: '9:30 AM', available: true },
   { label: '10:00 AM', available: true },
   { label: '10:30 AM',  available: true },
   { label: '11:00 AM', available: true },
@@ -104,7 +104,7 @@ function buildCalendarCells(year, month) {
 }
 
 function SlotButton({ slot, selected, onClick }) {
-  const baseClass = 'relative rounded-xl border px-4 py-3 text-sm font-medium text-left transition'
+  const baseClass = 'group relative rounded-xl border px-4 py-3 text-sm font-medium text-left transition'
   const disabledClass = slot.disabled ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-800 border-gray-200 hover:border-gray-300'
   const selectedClass = selected ? 'ring-2 ring-orange-400 border-orange-500' : ''
 
@@ -116,7 +116,10 @@ function SlotButton({ slot, selected, onClick }) {
       className={`${baseClass} ${disabledClass} ${selectedClass}`}
     >
       {slot.available && !slot.disabled && (
-        <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-green-500" />
+        <span className="absolute right-2 top-2 flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-0 group-hover:opacity-75 group-hover:animate-ping" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+        </span>
       )}
       {slot.label}
     </button>

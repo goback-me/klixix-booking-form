@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'motion/react'
 import Step0Workshop from './steps/Step0Workshop'
 import Step1Service from './steps/Step1Service'
 import Step2DateTime from './steps/Step2DateTime'
@@ -15,7 +16,18 @@ export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, s
   return (
     <>
       <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-y-hidden overflow-x-hidden">
-        <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} validationError={validationError} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="h-full"
+          >
+            <CurrentStep bookingData={bookingData} updateBookingData={updateBookingData} validationError={validationError} />
+          </motion.div>
+        </AnimatePresence>
       </div>
       <div className="border-t border-gray-200 p-4 sm:p-5 md:p-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0">
         {submitError && (

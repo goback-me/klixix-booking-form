@@ -32,12 +32,13 @@ export default function Step0Workshop({ bookingData, updateBookingData }) {
         <p className="text-gray-600 mb-4 md:mb-5 break-words">Experience premium automotive care with our expert technicians</p>
         <div className="mb-3 md:mb-5 border-t-1 border-gray-300"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 auto-rows-max">
-        {services.map((service) => (
+        {services.map((service, idx) => (
           <ServiceCard
             key={service.id}
             service={service}
             selected={bookingData.workshop?.id === service.id}
             containerHeight="aspect-[4/3] card-img-responsive"
+            index={idx}
             onSelect={() => {
               updateBookingData('workshop', service)
               if (typeof window !== 'undefined') {

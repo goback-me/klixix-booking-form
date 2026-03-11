@@ -36,13 +36,14 @@ export default function Step1Service({ bookingData, updateBookingData }) {
         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Book your vehicle service</h2>
         <p className="text-gray-600 mb-4 md:mb-5 break-words">Choose the type of service you need</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 auto-rows-max">
-              {services.map((service) => (
+              {services.map((service, idx) => (
                 <ServiceCard
                   key={service.id}
                   service={service}
                   selected={bookingData.service?.id === service.id}
                   onSelect={() => updateBookingData('service', service)}
                     containerHeight="aspect-[3/2] card-img-responsive"
+                    index={idx}
                 />
               ))}        </div>     </div>
     </div>

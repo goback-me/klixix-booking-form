@@ -1,5 +1,5 @@
 import { Check, Plus } from 'lucide-react'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 
 export default function Sidebar({ steps, currentStep, allCompleted = false }) {
   return (
@@ -31,11 +31,21 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                         : 'bg-white border-gray-300 text-gray-400'
                   }`}
                 >
-                  {isCompleted
-                    ? <Check size={14} strokeWidth={2.2} />
-                    : isCurrent
-                      ? <Plus size={14} strokeWidth={2.2} />
-                      : <span className="text-xs font-medium">{index + 1}</span>}
+                  <AnimatePresence mode="wait">
+                    {isCompleted ? (
+                      <motion.span key="check" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                        <Check size={14} strokeWidth={2.2} />
+                      </motion.span>
+                    ) : isCurrent ? (
+                      <motion.span key="plus" initial={{ scale: 0, rotate: 90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                        <Plus size={14} strokeWidth={2.2} />
+                      </motion.span>
+                    ) : (
+                      <motion.span key="num" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="text-xs font-medium">
+                        {index + 1}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
                 <span
                   className={`text-[10px] mt-1 whitespace-nowrap ${
@@ -51,17 +61,20 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               </div>
 
               {!isLast && (
-                <div className="flex-1 flex items-center mx-2 mt-[-12px]">
-                  <motion.div
-                    className={`h-0.5 w-full rounded-full ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
-                    initial={{ opacity: 0.35 }}
-                    animate={showActiveConnector
-                      ? { opacity: [0.5, 1, 0.5] }
-                      : { opacity: 0.35 }}
-                    transition={showActiveConnector
-                      ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
-                      : { duration: 0.2 }}
-                  />
+                <div className="flex-1 flex items-center justify-between mx-2 mt-[-12px] gap-[3px]">
+                  {Array.from({ length: 4 }).map((_, dotIndex) => (
+                    <motion.span
+                      key={`m-${index}-${dotIndex}`}
+                      className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${showActiveConnector ? 'bg-green-500' : 'bg-gray-300'}`}
+                      initial={{ opacity: 0.35, scale: 0.85 }}
+                      animate={showActiveConnector
+                        ? { opacity: [0.45, 1, 0.45], scale: [0.85, 1, 0.85] }
+                        : { opacity: 0.35, scale: 0.85 }}
+                      transition={showActiveConnector
+                        ? { duration: 1.2, repeat: Infinity, delay: dotIndex * 0.08, ease: 'easeInOut' }
+                        : { duration: 0.2 }}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -70,8 +83,8 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
       </div>
 
       {/* ── Desktop vertical sidebar ── */}
-      <div className="hidden lg:flex lg:w-84 bg-white p-6 lg:p-8 flex-col flex-shrink-0 min-h-0">
-        <div className="sidebar-styling p-6 flex flex-col h-full min-h-0">
+      <div className="hidden lg:flex lg:w-64 bg-white p-4 lg:p-5 flex-col flex-shrink-0 min-h-0">
+        <div className="sidebar-styling p-4 flex flex-col h-full min-h-0">
           <nav className="flex-1 overflow-y-auto pr-1">
             {steps.map((step, index) => {
               const isCompleted = allCompleted || index < currentStep
@@ -80,7 +93,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               const showActiveConnector = allCompleted || index < currentStep || index === currentStep
 
               return (
-                <div key={index} className="flex gap-4">
+                <div key={index} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <motion.div
                       initial={{ scale: 0.92, opacity: 0.9 }}
@@ -90,7 +103,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                       transition={isCurrent
                         ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
                         : { duration: 0.2 }}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center border transition ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border transition ${
                         isCompleted
                           ? 'bg-green-100 border-green-500 text-green-600'
                           : isCurrent
@@ -98,7 +111,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                             : 'bg-white border-gray-300 text-gray-400'
                       }`}
                     >
-                      {isCompleted ? <Check size={20} strokeWidth={2.2} /> : isCurrent ? <Plus size={20} strokeWidth={2.2} /> : <span className="text-sm font-medium">{index + 1}</span>}
+                      {isCompleted ? <Check size={16} strokeWidth={2.2} /> : isCurrent ? <Plus size={16} strokeWidth={2.2} /> : <span className="text-xs font-medium">{index + 1}</span>}
                     </motion.div>
 
                     {!isLast && (
@@ -120,10 +133,10 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                     )}
                   </div>
 
-                  <div className="pt-1.5">
-                    <p className="text-sm text-gray-400 mb-1">{`Step ${index + 1}/${steps.length}`}</p>
+                  <div className="pt-1">
+                    <p className="text-xs text-gray-400 mb-0.5">{`Step ${index + 1}/${steps.length}`}</p>
                     <p
-                      className={`text-2xl leading-tight ${
+                      className={`text-lg leading-tight ${
                         isCompleted
                           ? 'text-green-600 font-semibold'
                           : isCurrent

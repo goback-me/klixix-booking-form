@@ -32,7 +32,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
         <p className="text-gray-600 mb-4 break-words">Experience premium automotive care with our expert technicians</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-          {services.map((service) => (
+          {services.map((service, idx) => (
             <ServiceCard
               key={service.id}
               service={service}
@@ -42,6 +42,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
               containerHeight="h-20 card-img-compact"
               imageWidth={90}
               imageHeight={60}
+              index={idx}
             />
           ))}
         </div>

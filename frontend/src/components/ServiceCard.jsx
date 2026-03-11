@@ -1,3 +1,5 @@
+import { motion } from 'motion/react'
+
 export default function ServiceCard({
     service,
     selected,
@@ -6,6 +8,7 @@ export default function ServiceCard({
     imageHeight = 200,
     containerHeight = 'aspect-[4/3]',
     variant = 'default',
+    index = 0,
 }) {
     // Handle both string and object formats
     const serviceName = typeof service === 'string' ? service : service?.name
@@ -19,6 +22,14 @@ export default function ServiceCard({
     const isCompact = variant === 'compact'
 
     return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.06, ease: 'easeOut' }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.97 }}
+            className="h-full"
+        >
         <button
             onClick={onSelect}
             className={`text-left w-full min-w-0 rounded-xl overflow-hidden transition border-2 h-full flex flex-col card-border ${isCompact ? 'p-2' : 'p-2'} ${selected
@@ -65,5 +76,6 @@ export default function ServiceCard({
                 {!isCompact && servicePhone && <p className="text-sm md:text-sm font-500">{servicePhone}</p>}
             </div>
         </button>
+        </motion.div>
     )
 }
