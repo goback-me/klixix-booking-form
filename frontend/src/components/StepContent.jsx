@@ -15,7 +15,7 @@ export default function StepContent({ step, onNext, onPrev, onReset, onSubmit, s
 
   return (
     <>
-      <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-y-hidden overflow-x-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

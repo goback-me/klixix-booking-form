@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { MapPin, Clock, Phone } from 'lucide-react'
 
 export default function ServiceCard({
     service,
@@ -62,19 +63,34 @@ export default function ServiceCard({
                     )}
                 </div>
             )}
-            <div className={`${isCompact ? 'p-2.5' : 'p-3 md:p-4'} flex-1 flex flex-col min-w-0`}>
+            <div className={`${isCompact ? 'p-2.5' : 'p-2 sm:p-3 md:p-4'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
-                        <span className="text-orange-500 font-semibold text-lg leading-none">{servicePrice}</span>
+                        <span className="text-orange-500 font-semibold text-sm sm:text-lg leading-none">{servicePrice}</span>
                     )}
-                    <h3 className={`${isCompact ? 'text-sm leading-5' : 'text-lg md:text-xl'} font-600 break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
+                    <h3 className={`${isCompact ? 'text-sm leading-5' : 'text-sm sm:text-base md:text-lg'} font-600 break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
                         {serviceName}
                     </h3>
-                    {!isCompact && serviceRating && <span> ⭐ {serviceRating}</span>}
+                    {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
-                {!isCompact && serviceAddress && <p className="text-sm md:text-sm mb-1 break-words line-clamp-2">{serviceAddress}</p>}
-                {!isCompact && serviceTime && <p className="text-sm mb-2">{serviceTime}</p>}
-                {!isCompact && servicePhone && <p className="text-sm md:text-sm font-500">{servicePhone}</p>}
+                {!isCompact && serviceAddress && (
+                  <p className="flex items-start gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 break-words line-clamp-2 text-gray-600">
+                    <MapPin size={14} className="text-orange-500 shrink-0 mt-0.5" />
+                    {serviceAddress}
+                  </p>
+                )}
+                {!isCompact && serviceTime && (
+                  <p className="flex items-center gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 text-gray-600">
+                    <Clock size={14} className="text-orange-500 shrink-0" />
+                    {serviceTime}
+                  </p>
+                )}
+                {!isCompact && servicePhone && (
+                  <p className="flex items-center gap-1.5 text-xs sm:text-sm font-500 text-gray-600">
+                    <Phone size={14} className="text-orange-500 shrink-0" />
+                    {servicePhone}
+                  </p>
+                )}
             </div>
         </button>
         </motion.div>

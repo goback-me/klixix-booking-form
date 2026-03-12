@@ -183,16 +183,7 @@ background: var(--color-accent-secondary);
 box-shadow: 0 0 32px 0 rgba(0, 0, 0, 0.08);
 }
 
-/* Responsive card images — shrink on shorter viewports to prevent scroll */
-@media (min-width: 640px) {
-  .card-img-responsive {
-    aspect-ratio: unset !important;
-    height: clamp(80px, 15vh, 150px);
-  }
-  .card-img-compact {
-    height: clamp(48px, 8vh, 80px) !important;
-  }
-}
+/* Responsive card images — let aspect-ratio flow naturally, no fixed heights */
 
 /* GPU-composited stepper pulse animations (avoids non-composited animation warnings) */
 @keyframes stepper-pulse {
