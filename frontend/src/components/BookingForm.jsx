@@ -64,15 +64,38 @@ function validateStep(step, bookingData) {
       return null
     case 3: {
       const d = bookingData.carDetails
+      const email = d.email.trim()
+      const phone = d.phone.trim()
+      const year = String(d.year || '').trim()
       const missing = []
       if (!d.fullName.trim()) missing.push('fullName')
-      if (!d.email.trim()) missing.push('email')
-      if (!d.phone.trim()) missing.push('phone')
+      if (!email) missing.push('email')
+      if (!phone) missing.push('phone')
       if (!d.make.trim()) missing.push('make')
       if (!d.model.trim()) missing.push('model')
-      if (!d.year.toString().trim()) missing.push('year')
+      if (!year) missing.push('year')
       if (!d.registration.trim()) missing.push('registration')
       if (missing.length) return { message: 'Please fill in all required fields', fields: missing }
+
+      const invalid = []
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+      if (!emailRegex.test(email)) invalid.push('email')
+
+      const phoneDigits = phone.replace(/\D/g, '')
+      if (phoneDigits.length < 8 || phoneDigits.length > 15) invalid.push('phone')
+
+      const yearRegex = /^\d{4}$/
+      const yearNumber = Number.parseInt(year, 10)
+      const currentYear = new Date().getFullYear()
+      if (!yearRegex.test(year) || yearNumber < 1900 || yearNumber > currentYear + 1) invalid.push('year')
+
+      if (invalid.length) {
+        return {
+          message: 'Please enter a valid email, phone number, and 4-digit vehicle year.',
+          fields: invalid,
+        }
+      }
+
       return null
     }
     case 4:
@@ -128,10 +151,22 @@ export default function BookingForm() {
     const { workshop, service, date, time, carDetails, extras } = bookingData
 
     const jobTypeNames = []
+    const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     extras.forEach((id) => {
-      if (extraServicesMap[id]) jobTypeNames.push(extraServicesMap[id])
+      if (extraServicesMap[id]) {
+        jobTypeNames.push(extraServicesMap[id])
+        selectedAddonNames.push(extraServicesMap[id])
+      }
     })
+
+    const vehicleSummary = [carDetails.make, carDetails.model, carDetails.year]
+      .map((v) => String(v || '').trim())
+      .filter(Boolean)
+      .join(' ')
+    const userComment = carDetails.additionalInfo?.trim() || 'N/A'
+    const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
+    const enrichedNote = `Vehicle: ${vehicleSummary || 'N/A'} | User Comments: ${userComment} | Service Add-ons: ${addonsSummary}`
 
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -145,7 +180,10 @@ export default function BookingForm() {
       year: carDetails.year,
       drop_off_time: formatDropOffTime(date, time),
       job_type_names: jobTypeNames,
-      note: carDetails.additionalInfo || '',
+      note: enrichedNote,
+      booking_note: enrichedNote,
+      alert: enrichedNote,
+      service_addons: selectedAddonNames,
       is_flexible: bookingData.isFlexible || false,
     }
 

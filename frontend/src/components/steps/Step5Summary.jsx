@@ -204,7 +204,7 @@ export default function Step5Summary({ bookingData }) {
           {carDetails.email ? (
             <>A confirmation email has been sent to <span className="text-orange-500">{carDetails.email}</span><span className="mx-2"> </span></>
           ) : null}
-          Need help? Call us at <span className="text-orange-500">1300 CAR ONE</span>
+          Need help? Call us at <span className="text-orange-500"><a href="tel:0736070215">(07) 3607 0215</a></ span>
         </p>
       </div>
     </div>

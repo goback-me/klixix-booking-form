@@ -7,6 +7,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
     updateBookingData('carDetails', { ...details, [field]: value })
   }
 
+  const handleYearChange = (value) => {
+    const numericYear = value.replace(/\D/g, '').slice(0, 4)
+    handleChange('year', numericYear)
+  }
+
   const errorFields = validationError?.fields || []
 
   const inputClass = (field) =>
@@ -91,10 +96,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               Year <span className="text-orange-500">*</span>
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
               placeholder="e.g., 2020"
               value={details.year}
-              onChange={(e) => handleChange('year', e.currentTarget.value)}
+              onChange={(e) => handleYearChange(e.currentTarget.value)}
               className={inputClass('year')}
             />
           </div>
