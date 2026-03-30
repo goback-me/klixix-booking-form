@@ -132,6 +132,12 @@ export default function BookingForm() {
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
+  const autoAdvanceWithSelection = (key, value) => {
+    setBookingData((prev) => ({ ...prev, [key]: value }))
+    setValidationError(null)
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+  }
+
   const prevStep = () => {
     setValidationError(null)
     setCurrentStep((prev) => Math.max(prev - 1, 0))
@@ -222,6 +228,7 @@ export default function BookingForm() {
           step={currentStep}
           onNext={nextStep}
           onPrev={prevStep}
+          onAutoAdvance={autoAdvanceWithSelection}
           onReset={resetSteps}
           onSubmit={submitBooking}
           submitting={submitting}

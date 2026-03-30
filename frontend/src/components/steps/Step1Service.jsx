@@ -1,18 +1,20 @@
 import ServiceCard from '../ServiceCard'
 
-export default function Step1Service({ bookingData, updateBookingData }) {
+export default function Step1Service({ bookingData, updateBookingData, onAutoAdvance }) {
 
   const services = [
     {
       id:1,
-      name: 'Vehicle repair',
-      image: './vehicle-repair.webp',
-    }
-    ,{
-      id:2,
       name: 'General service', 
       image: './general-service.webp',
     }
+    ,
+    {
+      id:2,
+      name: 'Vehicle repair',
+      image: './vehicle-repair.webp',
+    }
+    ,
     ,{
       id:3,
       name: 'Roadworthy certificate',
@@ -41,7 +43,13 @@ export default function Step1Service({ bookingData, updateBookingData }) {
                   key={service.id}
                   service={service}
                   selected={bookingData.service?.id === service.id}
-                  onSelect={() => updateBookingData('service', service)}
+                  onSelect={() => {
+                    if (onAutoAdvance) {
+                      onAutoAdvance('service', service)
+                    } else {
+                      updateBookingData('service', service)
+                    }
+                  }}
                     containerHeight="h-20 sm:h-28 md:h-32 lg:h-36"
                     index={idx}
                 />

@@ -43,6 +43,26 @@ body {
   overflow: hidden;
 }
 
+.app-shell {
+  height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .app-shell {
+    height: 100dvh;
+  }
+}
+
+.mobile-safe-footer {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .mobile-safe-footer {
+    padding-bottom: 1.25rem;
+  }
+}
+
 /* Apply fonts globally */
 body {
   font-family: var(--font-body);

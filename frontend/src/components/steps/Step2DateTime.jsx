@@ -49,6 +49,18 @@ function formatYmd(year, month, day) {
   return `${year}-${pad(month)}-${pad(day)}`
 }
 
+function parseYmd(value) {
+  if (typeof value !== 'string') return null
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return null
+
+  return {
+    year: Number.parseInt(match[1], 10),
+    month: Number.parseInt(match[2], 10),
+    day: Number.parseInt(match[3], 10),
+  }
+}
+
 function getAustralianDateParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: AU_TIMEZONE,
@@ -129,6 +141,7 @@ function SlotButton({ slot, selected, onClick }) {
 export default function Step2DateTime({ bookingData, updateBookingData }) {
   const nowInAu = useMemo(() => getAustralianDateParts(), [])
   const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
   const [viewedMonth, setViewedMonth] = useState(nowInAu.month)
   const [viewedYear, setViewedYear] = useState(nowInAu.year)
@@ -149,10 +162,20 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
   const [blockedDates, setBlockedDates] = useState(new Set([todayYmd]))
   const [loadingBlockedDays, setLoadingBlockedDays] = useState(true)
 
+  useEffect(() => {
+    if (!selectedTime) {
+      setSelectedTime('8:00 AM')
+    }
+  }, [selectedTime])
+
   const workshopId = useMemo(() => {
+    if (bookingData?.workshop?.workshopId) {
+      return bookingData.workshop.workshopId
+    }
+
     if (typeof window === 'undefined') return 'woolloongabba'
     return window.localStorage.getItem('selectedWorkshop') || 'woolloongabba'
-  }, [])
+  }, [bookingData?.workshop?.workshopId])
 
   useEffect(() => {
     let isMounted = true
@@ -160,7 +183,11 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
     async function fetchUnavailableDays() {
       setLoadingBlockedDays(true)
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/unavailable-days?workshop=${encodeURIComponent(workshopId)}&in_days=180`)
+        const params = new URLSearchParams({
+          workshop: workshopId,
+          in_days: '180',
+        })
+        const response = await fetch(`${apiBaseUrl}/api/unavailable-days?${params.toString()}`)
         if (!response.ok) {
           let errorDetail = `API request failed: ${response.status}`
           try {
@@ -204,7 +231,58 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
     return () => {
       isMounted = false
     }
-  }, [workshopId, todayYmd])
+  }, [apiBaseUrl, workshopId, todayYmd])
+
+  useEffect(() => {
+    if (loadingBlockedDays) return
+
+    const todayParts = parseYmd(todayYmd)
+    if (!todayParts) return
+
+    const startDate = new Date(Date.UTC(todayParts.year, todayParts.month - 1, todayParts.day + 1))
+    let firstAvailableYmd = ''
+    let firstAvailableParts = null
+
+    for (let i = 0; i < 370; i += 1) {
+      const candidate = new Date(startDate)
+      candidate.setUTCDate(startDate.getUTCDate() + i)
+
+      const y = candidate.getUTCFullYear()
+      const m = candidate.getUTCMonth() + 1
+      const d = candidate.getUTCDate()
+      const ymd = formatYmd(y, m, d)
+
+      if (!blockedDates.has(ymd)) {
+        firstAvailableYmd = ymd
+        firstAvailableParts = { year: y, month: m, day: d }
+        break
+      }
+    }
+
+    if (!firstAvailableYmd || !firstAvailableParts) return
+
+    const isSelectedDateValid = Boolean(
+      selectedDate &&
+      selectedDate > todayYmd &&
+      !blockedDates.has(selectedDate)
+    )
+
+    const targetDate = isSelectedDateValid ? selectedDate : firstAvailableYmd
+    const targetParts = parseYmd(targetDate)
+
+    if (targetParts) {
+      if (viewedMonth !== targetParts.month) {
+        setViewedMonth(targetParts.month)
+      }
+      if (viewedYear !== targetParts.year) {
+        setViewedYear(targetParts.year)
+      }
+    }
+
+    if (selectedDate !== targetDate) {
+      setSelectedDate(targetDate)
+    }
+  }, [blockedDates, loadingBlockedDays, selectedDate, todayYmd, viewedMonth, viewedYear])
 
   const yearOptions = useMemo(
     () => [nowInAu.year, nowInAu.year + 1],

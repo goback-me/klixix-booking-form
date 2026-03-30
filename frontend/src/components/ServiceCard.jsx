@@ -36,13 +36,13 @@ export default function ServiceCard({
             onClick={onSelect}
             className={`text-left w-full min-w-0 rounded-xl overflow-hidden transition border-2 h-full flex flex-col card-border ${isCompact ? 'p-2' : 'p-2'} ${selected
                 ? isCompact
-                    ? 'border-sky-500 ring-2 ring-sky-500 bg-white'
+                    ? 'border-orange-500 ring-2 ring-orange-500 bg-white'
                     : 'border-orange-500 ring-2 ring-orange-500 bg-orange-50'
                 : isCompact
-                    ? 'border-gray-200 hover:border-sky-300 bg-white'
+                    ? 'border-gray-200 hover:border-orange-300 bg-white'
                     : 'border-gray-200 hover:border-orange-300'
                 }`}
-            style={{ borderColor: selected ? (isCompact ? '#1d9bf0' : 'var(--color-primary)') : '#e5e7eb' }}
+            style={{ borderColor: selected ? 'var(--color-primary)' : '#e5e7eb' }}
         >
             {(serviceImage || isCompact) && (
                 <div className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}>

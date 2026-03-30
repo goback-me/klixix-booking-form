@@ -1,27 +1,25 @@
 import ServiceCard from '../ServiceCard'
 
-export default function Step0Workshop({ bookingData, updateBookingData }) {
+export default function Step0Workshop({ bookingData, updateBookingData, onAutoAdvance }) {
 
   const services = [
     {
       id: 1,
       workshopId: 'hendra',
       name: 'Hendra workshop',
-      address: '238 Nudgee Rd, Hendra QLD 4011',
+      address: '238 Nudgee Rd, Hendra QLD 4011, Australia',
       time: 'Open today until 5:00pm',
-      phone:'+1 (07) 3607 0215',
+      phone:'0736070215',
       image: "./hendra-workshop.webp",
-      rating: 4.8,
     },
     {
       id: 2,
       workshopId: 'woolloongabba',
       name: 'Woolloongabba workshop',
-      address: '456 Main St, Woolloongabba QLD 4102',
+      address: '187 Logan Rd, Woolloongabba QLD 4102, Australia',
       time: 'Open today until 5:00pm',
-      phone:'+1 (07) 3607 0215',
+      phone:'0736070215',
       image: "./woolloongabba-workshop.webp",
-      rating: 4.8,
     },
   ]
 
@@ -40,7 +38,11 @@ export default function Step0Workshop({ bookingData, updateBookingData }) {
             containerHeight="h-28 sm:h-36 md:h-44 lg:h-62"
             index={idx}
             onSelect={() => {
-              updateBookingData('workshop', service)
+              if (onAutoAdvance) {
+                onAutoAdvance('workshop', service)
+              } else {
+                updateBookingData('workshop', service)
+              }
               if (typeof window !== 'undefined') {
                 window.localStorage.setItem('selectedWorkshop', service.workshopId)
               }
