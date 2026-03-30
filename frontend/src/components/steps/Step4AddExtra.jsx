@@ -1,18 +1,15 @@
 import ServiceCard from '../ServiceCard'
 
 export default function Step4AddExtra({ bookingData, updateBookingData }) {
+  const isWoolloongabba = bookingData?.workshop?.workshopId === 'woolloongabba'
 
   const services = [
     { id: 1, name: 'Tyre rotation & balancing', price: '$77.50', image: '/tyre-rotation.svg' },
     { id: 2, name: 'Engine flush plus', price: '$39.50', image: '/Engine flush plus.svg' },
-    { id: 3, name: 'A/C clean & deodoriser', price: '$35.25', image: '/AC clean & deodoriser.svg' },
+    { id: 3, name: 'A/C clean & deodoriser', price: '$38.25', image: '/AC clean & deodoriser.svg' },
     { id: 4, name: 'Wiper blade replacement', price: '$27.00 each', image: '/Wiper blade replacement.svg' },
-    { id: 5, name: 'A/C re-gas & full service', price: '$25.00', image: '/AC re-gas & full service.svg' },
+    { id: 5, name: 'A/C re-gas & full service', price: '$250.00', image: '/AC re-gas & full service.svg' },
     { id: 6, name: 'Tyre puncture repair', price: '$46.50', image: '/Tyre puncture repair.svg' },
-    { id: 7, name: 'Brake calipers system', price: '$8.22', image: '/Brake calibers system.svg' },
-    { id: 8, name: 'Oil and filter change', price: '$8.22', image: '/Oil and filter change.svg' },
-    { id: 9, name: 'Body and Aesthetics', price: '$20.00', image: '/Body and Aesthetics.svg' },
-    { id: 10, name: 'Exhaust system servicing', price: '$13.22', image: '/Exhaust system servicing.svg' },
   ]
 
   const selectedExtras = bookingData.extras || []
@@ -35,7 +32,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
           {services.map((service, idx) => (
             <ServiceCard
               key={service.id}
-              service={service}
+              service={{ ...service, price: isWoolloongabba ? null : service.price }}
               selected={selectedExtras.includes(service.id)}
               onSelect={() => toggleService(service.id)}
               variant="compact"

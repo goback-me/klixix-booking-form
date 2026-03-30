@@ -8,14 +8,10 @@ const workshopAddresses = {
 const extraServices = [
   { id: 1, name: 'Tyre rotation & balancing', price: 77.50 },
   { id: 2, name: 'Engine flush plus', price: 39.50 },
-  { id: 3, name: 'A/C clean & deodoriser', price: 35.25 },
+  { id: 3, name: 'A/C clean & deodoriser', price: 38.25 },
   { id: 4, name: 'Wiper blade replacement', price: 27.00 },
-  { id: 5, name: 'A/C re-gas & full service', price: 25.00 },
+  { id: 5, name: 'A/C re-gas & full service', price: 250.00 },
   { id: 6, name: 'Tyre puncture repair', price: 46.50 },
-  { id: 7, name: 'Brake calipers system', price: 8.22 },
-  { id: 8, name: 'Oil and filter change', price: 8.22 },
-  { id: 9, name: 'Body and Aesthetics', price: 20 },
-  { id: 10, name: 'Exhaust system servicing', price: 13.22 },
 ]
 
 function formatDate(dateStr) {
