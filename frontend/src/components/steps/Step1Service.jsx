@@ -35,8 +35,8 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
   return (
     <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Book your vehicle service</h2>
-        <p className="text-gray-600 mb-4 md:mb-5 break-words">Choose the type of service you need</p>
+        <h2 className="text-2xl md:text-3xl text-gray-900 mb-1 break-words">Select a service</h2>
+        <p className="text-gray-600 mb-4 md:mb-5 break-words">What can we help you with today?</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 auto-rows-max">
               {services.map((service, idx) => (
                 <ServiceCard
@@ -50,7 +50,7 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
                       updateBookingData('service', service)
                     }
                   }}
-                    containerHeight="h-20 sm:h-28 md:h-32 lg:h-36"
+                    containerHeight="h-16 sm:h-20 md:h-24 lg:h-28"
                     index={idx}
                 />
               ))}        </div>     </div>

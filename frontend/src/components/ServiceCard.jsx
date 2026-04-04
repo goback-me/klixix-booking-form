@@ -36,11 +36,11 @@ export default function ServiceCard({
             onClick={onSelect}
             className={`text-left w-full min-w-0 rounded-xl overflow-hidden transition border-2 h-full flex flex-col card-border ${isCompact ? 'p-2' : 'p-2'} ${selected
                 ? isCompact
-                    ? 'border-orange-500 ring-2 ring-orange-500 bg-white'
-                    : 'border-orange-500 ring-2 ring-orange-500 bg-orange-50'
+                    ? 'border-[rgba(255,77,36,1)] ring-2 ring-[rgba(255,77,36,1)] bg-white'
+                    : 'border-[rgba(255,77,36,1)] ring-2 ring-[rgba(255,77,36,1)] bg-[rgba(255,77,36,0.08)]'
                 : isCompact
-                    ? 'border-gray-200 hover:border-orange-300 bg-white'
-                    : 'border-gray-200 hover:border-orange-300'
+                    ? 'border-gray-200 hover:border-[rgba(255,77,36,1)] bg-white'
+                    : 'border-gray-200 hover:border-[rgba(255,77,36,1)]'
                 }`}
             style={{ borderColor: selected ? 'var(--color-primary)' : '#e5e7eb' }}
         >
@@ -66,7 +66,7 @@ export default function ServiceCard({
             <div className={`${isCompact ? 'p-2.5' : 'p-2 sm:p-3 md:p-4'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
-                        <span className="text-orange-500 font-semibold text-sm sm:text-lg leading-none">{servicePrice}</span>
+                        <span className="text-[rgba(255,77,36,1)] font-semibold text-sm sm:text-lg leading-none">{servicePrice}</span>
                     )}
                     <h3 className={`${isCompact ? 'text-sm leading-5' : 'text-sm sm:text-base md:text-lg'} font-600 break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
                         {serviceName}
@@ -75,19 +75,19 @@ export default function ServiceCard({
                 </div>
                 {!isCompact && serviceAddress && (
                   <p className="flex items-start gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 break-words line-clamp-2 text-gray-600">
-                    <MapPin size={14} className="text-orange-500 shrink-0 mt-0.5" />
+                    <MapPin size={14} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
                     {serviceAddress}
                   </p>
                 )}
                 {!isCompact && serviceTime && (
                   <p className="flex items-center gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 text-gray-600">
-                    <Clock size={14} className="text-orange-500 shrink-0" />
+                    <Clock size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
                   </p>
                 )}
                 {!isCompact && servicePhone && (
                   <p className="flex items-center gap-1.5 text-xs sm:text-sm font-500 text-gray-600">
-                    <Phone size={14} className="text-orange-500 shrink-0" />
+                    <Phone size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {servicePhone}
                   </p>
                 )}

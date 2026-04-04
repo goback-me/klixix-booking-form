@@ -30,7 +30,7 @@ const mobileDotSizes = [
 
 function dotColor(isCompleted, isCurrent) {
   if (isCompleted) return 'bg-green-500'
-  if (isCurrent) return 'bg-orange-400'
+  if (isCurrent) return 'bg-[rgba(255,77,36,1)]'
   return 'bg-gray-300'
 }
 
@@ -56,7 +56,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                     isCompleted
                       ? 'bg-green-100 border-green-500 text-green-600'
                       : isCurrent
-                        ? 'bg-orange-500 border-orange-500 text-white'
+                        ? 'bg-[rgba(255,77,36,1)] border-[rgba(255,77,36,1)] text-white'
                         : 'bg-white border-gray-300 text-gray-400'
                   }`}
                 >
@@ -86,7 +86,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                     isCompleted
                       ? 'text-green-600 font-medium'
                       : isCurrent
-                        ? 'text-orange-500 font-medium'
+                        ? 'text-[rgba(255,77,36,1)] font-medium'
                         : 'text-gray-400'
                   }`}
                 >
@@ -103,7 +103,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                         connectorCompleted
                           ? 'bg-green-500 dot-active'
                           : connectorCurrent
-                            ? 'bg-orange-400 dot-active'
+                                  ? 'bg-[rgba(255,77,36,1)] dot-active'
                             : 'bg-gray-300 opacity-40'
                       }`}
                       style={(connectorCompleted || connectorCurrent) ? { animationDelay: `${dotIndex * 0.08}s` } : undefined}
@@ -137,7 +137,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                         isCompleted
                           ? 'bg-green-100 border-green-500 text-green-600'
                           : isCurrent
-                            ? 'bg-orange-500 border-orange-500 text-white'
+                            ? 'bg-[rgba(255,77,36,1)] border-[rgba(255,77,36,1)] text-white'
                             : 'bg-white border-gray-300 text-gray-400'
                       }`}
                     >
@@ -158,7 +158,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                               connectorCompleted
                                 ? 'bg-green-500 dot-active'
                                 : connectorCurrent
-                                  ? 'bg-orange-400 dot-active'
+                                  ? 'bg-[rgba(255,77,36,1)] dot-active'
                                   : 'bg-gray-300 opacity-40'
                             }`}
                             style={(connectorCompleted || connectorCurrent) ? { animationDelay: `${dotIndex * 0.06}s` } : undefined}
@@ -175,7 +175,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                         isCompleted
                           ? 'text-green-600 font-semibold'
                           : isCurrent
-                            ? 'text-orange-500 font-semibold'
+                            ? 'text-[rgba(255,77,36,1)] font-semibold'
                             : 'text-gray-500'
                       }`}
                       style={{ fontFamily: 'var(--font-display)' }}

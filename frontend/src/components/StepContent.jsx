@@ -14,8 +14,8 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
   const isSubmitStep = step === steps.length - 2
   const isAutoAdvanceStep = step === 0 || step === 1
   const footerClass = isSummaryStep
-    ? 'mobile-safe-footer border-t border-gray-200 p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
-    : 'mobile-safe-footer border-t border-gray-200 p-4 sm:p-5 md:p-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
+    ? 'mobile-safe-footer border-t border-gray-200 p-3 sm:p-4 md:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
+    : 'mobile-safe-footer border-t border-gray-200 p-3 sm:p-4 md:p-5 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
 
   return (
     <>
@@ -66,7 +66,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
             </button>
             <button
               onClick={onReset}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Back to home
             </button>
@@ -75,7 +75,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
           <button
             onClick={onSubmit}
             disabled={submitting}
-            className="w-[48%] sm:w-auto px-8 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-[48%] sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? (
               <>
@@ -88,7 +88,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
           !isAutoAdvanceStep && (
             <button
               onClick={onNext}
-              className="w-[48%] sm:w-auto px-8 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-[48%] sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Next
             </button>

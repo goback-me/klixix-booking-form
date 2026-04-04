@@ -15,20 +15,20 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
   const errorFields = validationError?.fields || []
 
   const inputClass = (field) =>
-    `w-full p-3 border rounded-xl focus:outline-none focus:border-orange-500 ${
+    `w-full p-3 border rounded-xl focus:outline-none focus:border-[rgba(255,77,36,1)] ${
       errorFields.includes(field) ? 'border-red-400' : 'border-gray-300'
     }`
 
   return (
     <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 break-words">Vehicle &amp; contact details</h2>
+        <h2 className="text-2xl md:text-3xl text-gray-900 mb-1 break-words">Vehicle &amp; contact details</h2>
         <p className="text-gray-600 mb-4 break-words">Tell us about your vehicle and how to reach you.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Full name <span className="text-orange-500">*</span>
+              Full name <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="text"
@@ -41,7 +41,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Email <span className="text-orange-500">*</span>
+              Email <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="email"
@@ -54,7 +54,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Phone number <span className="text-orange-500">*</span>
+              Phone number <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="tel"
@@ -67,7 +67,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Make <span className="text-orange-500">*</span>
+              Make <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="text"
@@ -80,7 +80,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Model <span className="text-orange-500">*</span>
+              Model <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="text"
@@ -93,7 +93,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Year <span className="text-orange-500">*</span>
+              Year <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="text"
@@ -109,7 +109,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
           <div>
             <label className="block text-sm font-500 text-gray-900 mb-2">
-              Registration <span className="text-orange-500">*</span>
+              Registration <span className="text-[rgba(255,77,36,1)]">*</span>
             </label>
             <input
               type="text"
@@ -125,7 +125,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             <select
               value={details.state}
               onChange={(e) => handleChange('state', e.currentTarget.value)}
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-orange-500 bg-white"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[rgba(255,77,36,1)] bg-white"
             >
               <option value="">Select state</option>
               {auStates.map((s) => (
@@ -141,7 +141,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               placeholder="Any specific concerns or requests..."
               value={details.additionalInfo}
               onChange={(e) => handleChange('additionalInfo', e.currentTarget.value)}
-              className="w-full p-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:border-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:border-[rgba(255,77,36,1)]"
             />
           </div>
         </div>

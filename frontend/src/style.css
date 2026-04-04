@@ -1,12 +1,97 @@
 /* Fonts loaded via index.html preconnect + async link */
 
+/* General Sans Font Family */
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-LightItalic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-MediumItalic.otf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-SemiboldItalic.otf') format('opentype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-BoldItalic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-Extralight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/src/fonts/general-sans/GeneralSans-ExtralightItalic.otf') format('opentype');
+  font-weight: 200;
+  font-style: italic;
+}
+
 @import "tailwindcss";
 
 :root {
   /* Colors */
-  --color-primary: #FF4D24;
+  --color-primary: rgba(255, 77, 36, 1);
   --color-primary-dark: #111;
-  --color-secondary: #F16622;
+  --color-secondary: rgba(255, 77, 36, 1);
   --color-accent: #F5F5F5;
   --color-border: #17AB00;
   --color-accent-secondary: #ffffff;
@@ -35,6 +120,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'General Sans', sans-serif;
 }
 
 #app {
