@@ -21,7 +21,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
   return (
     <>
       <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-        {step !== 0 && step !== 1 && (
+        {step !== 0 && (
           <div className="sm:hidden px-3 pt-2 pb-1">
             <button
               onClick={onPrev}
