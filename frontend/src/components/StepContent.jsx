@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react'
+import { ArrowLeft } from 'lucide-react'
 import Step0Workshop from './steps/Step0Workshop'
 import Step1Service from './steps/Step1Service'
 import Step2DateTime from './steps/Step2DateTime'
@@ -19,7 +20,21 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
 
   return (
     <>
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        {step !== 0 && step !== 1 && (
+          <div className="sm:hidden px-3 pt-2 pb-1">
+            <button
+              onClick={onPrev}
+              disabled={submitting}
+              className="inline-flex items-center gap-3 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-black bg-white">
+                <ArrowLeft className="h-5 w-5 text-black" strokeWidth={2.1} aria-hidden="true" />
+              </span>
+              <span className="text-[1.5rem] leading-none font-light text-black">Back</span>
+            </button>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -35,6 +50,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
               updateBookingData={updateBookingData}
               validationError={validationError}
               onAutoAdvance={onAutoAdvance}
+              onPrev={onPrev}
             />
           </motion.div>
         </AnimatePresence>
@@ -46,16 +62,15 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
         {validationError && (
           <p className="w-full text-sm text-red-500 mb-1">{validationError.message}</p>
         )}
-        {step !== 0 && (
+        {step !== 0 && step !== 1 && (
           <button
             onClick={onPrev}
             disabled={submitting}
-            className={`${isSummaryStep ? 'w-full sm:w-auto' : 'w-[48%] sm:w-auto'} px-5 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
+            className={`${isSummaryStep ? 'w-full sm:w-auto' : 'hidden sm:inline-flex sm:w-auto'} px-5 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
           >
             Back
           </button>
         )}
-
         {isSummaryStep ? (
           <div className="w-full sm:w-auto grid grid-cols-1 sm:flex sm:flex-nowrap items-stretch sm:items-center justify-end gap-2 sm:gap-3">
             <button
@@ -75,7 +90,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
           <button
             onClick={onSubmit}
             disabled={submitting}
-            className="w-[48%] sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {submitting ? (
               <>
@@ -88,7 +103,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
           !isAutoAdvanceStep && (
             <button
               onClick={onNext}
-              className="w-[48%] sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Next
             </button>

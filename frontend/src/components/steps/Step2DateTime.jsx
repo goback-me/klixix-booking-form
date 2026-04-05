@@ -131,7 +131,7 @@ function getWeekdayLabel(date) {
 }
 
 function SlotButton({ slot, selected, onClick }) {
-  const baseClass = 'group relative rounded-xl border px-2.5 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-left transition-all duration-200'
+  const baseClass = 'group relative rounded-xl border px-2 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-[0.95rem] font-semibold text-left transition-all duration-200'
   const disabledClass = slot.disabled ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-800 border-gray-200 hover:border-[rgba(255,77,36,0.75)] hover:text-[rgba(255,77,36,1)] hover:bg-[rgba(255,77,36,0.08)] hover:shadow-[0_4px_10px_rgba(255,77,36,0.16)] hover:-translate-y-[1px]'
   const selectedClass = selected ? 'border-[rgba(255,77,36,1)] bg-white text-[rgba(255,77,36,1)] shadow-[0_0_0_1px_rgba(255,77,36,1),0_8px_18px_rgba(255,77,36,0.12)] ring-0' : ''
 
@@ -528,10 +528,10 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
             )}
         </div>
 
-        <div className={`lg:hidden space-y-3.5 transition ${showCalendarPopup ? 'blur-sm opacity-60 pointer-events-none' : ''}`}>
-            <div className="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div className={`lg:hidden space-y-3 transition ${showCalendarPopup ? 'blur-sm opacity-60 pointer-events-none' : ''}`}>
+            <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
               <h3 className="text-sm font-medium text-gray-900 mb-2.5">Morning available times</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {morningSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}
@@ -543,9 +543,9 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-3.5 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
               <h3 className="text-sm font-medium text-gray-900 mb-2.5">Afternoon available times</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {afternoonSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}
@@ -627,10 +627,10 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
           </div>
 
           {/* Right: Time slots - Column 3-5 */}
-          <div className="col-span-3 flex flex-col gap-4">
-            <div className="rounded-[22px] border border-gray-100 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
+          <div className="col-span-3 flex flex-col gap-3.5">
+            <div className="rounded-[22px] border border-gray-100 bg-white p-3 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
               <h3 className="text-sm font-semibold text-gray-900 mb-2.5">Morning available times</h3>
-              <div className="grid grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-4 gap-2">
                 {morningSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}
@@ -642,9 +642,9 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
               </div>
             </div>
 
-            <div className="rounded-[22px] border border-gray-100 bg-white p-3.5 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[22px] border border-gray-100 bg-white p-3 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
               <h3 className="text-sm font-semibold text-gray-900 mb-2.5">Afternoon available times</h3>
-              <div className="grid grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-4 gap-2">
                 {afternoonSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}

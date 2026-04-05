@@ -32,7 +32,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="text"
-              placeholder="John Smith"
+              placeholder="First and last name"
               value={details.fullName}
               onChange={(e) => handleChange('fullName', e.currentTarget.value)}
               className={inputClass('fullName')}
@@ -45,7 +45,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="email"
-              placeholder="john@example.com"
+              placeholder="yourname@example.com"
               value={details.email}
               onChange={(e) => handleChange('email', e.currentTarget.value)}
               className={inputClass('email')}
@@ -58,7 +58,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="tel"
-              placeholder="0423 345 678"
+              placeholder="+61"
               value={details.phone}
               onChange={(e) => handleChange('phone', e.currentTarget.value)}
               className={inputClass('phone')}
@@ -71,7 +71,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="text"
-              placeholder="e.g., Toyota"
+              placeholder="e.g. Mitsubishi"
               value={details.make}
               onChange={(e) => handleChange('make', e.currentTarget.value)}
               className={inputClass('make')}
@@ -84,7 +84,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="text"
-              placeholder="e.g., Camry"
+              placeholder="e.g. Triton"
               value={details.model}
               onChange={(e) => handleChange('model', e.currentTarget.value)}
               className={inputClass('model')}
@@ -113,7 +113,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="text"
-              placeholder="E.G., ABC123"
+              placeholder="e.g. ABC123"
               value={details.registration}
               onChange={(e) => handleChange('registration', e.currentTarget.value)}
               className={inputClass('registration')}
@@ -138,7 +138,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             <label className="block text-sm font-500 text-gray-900 mb-2">Additional information</label>
             <textarea
               rows={3}
-              placeholder="Any specific concerns or requests..."
+              placeholder="e.g. Strange noise when braking, service light is on, car pulls to the left ... "
               value={details.additionalInfo}
               onChange={(e) => handleChange('additionalInfo', e.currentTarget.value)}
               className="w-full p-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:border-[rgba(255,77,36,1)]"

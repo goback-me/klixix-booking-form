@@ -117,8 +117,8 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
       </div>
 
       {/* ── Desktop vertical sidebar ── */}
-      <div className="hidden lg:flex lg:w-64 bg-white p-4 lg:p-5 flex-col flex-shrink-0 min-h-0">
-        <div className="sidebar-styling p-4 flex flex-col h-full min-h-0">
+      <div className="hidden lg:flex lg:w-56 xl:w-60 bg-white p-3 lg:p-4 flex-col flex-shrink-0 min-h-0">
+        <div className="sidebar-styling p-3 lg:p-3.5 flex flex-col h-full min-h-0">
           <nav className="flex-1 overflow-y-auto pr-1">
             {steps.map((step, index) => {
               const isCompleted = allCompleted || index < currentStep
@@ -128,10 +128,10 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
               const connectorCurrent = !allCompleted && index === currentStep
 
               return (
-                <div key={index} className="flex gap-3">
+                <div key={index} className="flex gap-2.5">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border transition ${
+                      className={`w-9 h-9 xl:w-10 xl:h-10 rounded-full flex items-center justify-center border transition ${
                         isCurrent ? 'stepper-active-lg' : ''
                       } ${
                         isCompleted
@@ -171,7 +171,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                   <div className="pt-1">
                     <p className="text-xs text-gray-400 mb-0.5">{`Step ${index + 1}/${steps.length}`}</p>
                     <p
-                      className={`text-lg leading-tight ${
+                      className={`text-base xl:text-lg leading-tight ${
                         isCompleted
                           ? 'text-green-600 font-semibold'
                           : isCurrent

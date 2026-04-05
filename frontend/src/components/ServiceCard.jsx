@@ -21,6 +21,8 @@ export default function ServiceCard({
     const serviceTime = typeof service === 'object' ? service?.time : null
     const servicePhone = typeof service === 'object' ? service?.phone : null
     const isCompact = variant === 'compact'
+    const isWorkshop = variant === 'workshop'
+    const isService = variant === 'service'
 
     return (
         <motion.div
@@ -50,7 +52,7 @@ export default function ServiceCard({
                         <img
                             src={serviceImage}
                             alt={serviceName}
-                            className={isCompact ? 'w-14 h-14 object-contain' : 'w-full h-full object-cover rounded-lg'}
+                            className={isCompact ? 'w-14 h-14 object-contain' : isService ? 'w-full h-full object-cover object-center rounded-lg' : 'w-full h-full object-cover rounded-lg'}
                             width={imageWidth}
                             height={imageHeight}
                         />
@@ -63,30 +65,30 @@ export default function ServiceCard({
                     )}
                 </div>
             )}
-            <div className={`${isCompact ? 'p-2.5' : 'p-2 sm:p-3 md:p-4'} flex-1 flex flex-col min-w-0`}>
+                        <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-3 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
                         <span className="text-[rgba(255,77,36,1)] font-semibold text-sm sm:text-lg leading-none">{servicePrice}</span>
                     )}
-                    <h3 className={`${isCompact ? 'text-sm leading-5' : 'text-sm sm:text-base md:text-lg'} font-600 break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
+                                        <h3 className={`${isCompact ? 'text-sm leading-5' : isWorkshop ? 'text-[20px] sm:text-[22px] md:text-[24px] leading-[1.15] tracking-[-0.01em]' : 'text-[18px] sm:text-[20px] md:text-[18px] leading-[1.18] tracking-[-0.01em]'} font-medium break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
                         {serviceName}
                     </h3>
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
-                {!isCompact && serviceAddress && (
-                  <p className="flex items-start gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 break-words line-clamp-2 text-gray-600">
+                                {!isCompact && serviceAddress && (
+                                    <p className={`flex items-start gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35] line-clamp-1 mt-1.5' : 'text-xs sm:text-sm line-clamp-2'} mb-1.5 break-words text-gray-600`}>
                     <MapPin size={14} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
                     {serviceAddress}
                   </p>
                 )}
                 {!isCompact && serviceTime && (
-                  <p className="flex items-center gap-1.5 text-xs sm:text-sm mb-0.5 sm:mb-1 text-gray-600">
+                                    <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35]' : 'text-xs sm:text-sm'} mb-1.5 text-gray-600`}>
                     <Clock size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
                   </p>
                 )}
                 {!isCompact && servicePhone && (
-                  <p className="flex items-center gap-1.5 text-xs sm:text-sm font-500 text-gray-600">
+                                    <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35]' : 'text-xs sm:text-sm'} font-medium text-gray-600`}>
                     <Phone size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {servicePhone}
                   </p>
