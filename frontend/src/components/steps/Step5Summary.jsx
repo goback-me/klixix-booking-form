@@ -142,7 +142,7 @@ export default function Step5Summary({ bookingData }) {
         {carDetails.email ? (
           <>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)]">{carDetails.email}</span><span className="mx-2"> </span></>
         ) : null}
-        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:0736070215">1300 CAR ONE</a></span>
+        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:0736070215">0736070215</a></span>
       </div>
     </div>
   )
