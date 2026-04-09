@@ -147,6 +147,21 @@ function addDays(date, amount) {
 }
 
 /** @param {Date} date */
+function isWeekendUtcDate(date) {
+  const day = date.getUTCDay()
+  return day === 0 || day === 6
+}
+
+/** @param {Date} date */
+function moveToNextBusinessDay(date) {
+  let candidate = new Date(date.getTime())
+  while (isWeekendUtcDate(candidate)) {
+    candidate = addDays(candidate, 1)
+  }
+  return candidate
+}
+
+/** @param {Date} date */
 function dateToYmd(date) {
   return formatYmd(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
 }
@@ -217,7 +232,8 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
 
   const earliestSelectableDate = useMemo(() => {
     const offset = nowInAu.hour >= 17 ? 2 : 1
-    return addDays(new Date(Date.UTC(nowInAu.year, nowInAu.month - 1, nowInAu.day)), offset)
+    const baseDate = addDays(new Date(Date.UTC(nowInAu.year, nowInAu.month - 1, nowInAu.day)), offset)
+    return moveToNextBusinessDay(baseDate)
   }, [nowInAu.hour, nowInAu.year, nowInAu.month, nowInAu.day])
 
   const latestSelectableDate = useMemo(
@@ -238,7 +254,7 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
         day: date.getUTCDate(),
         month: date.getUTCMonth() + 1,
         year: date.getUTCFullYear(),
-        disabled: blockedDates.has(ymd),
+        disabled: blockedDates.has(ymd) || isWeekendUtcDate(date),
       })
     }
     return options
@@ -557,8 +573,9 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                       const dateYmd = formatYmd(viewedYear, viewedMonth, cell.day)
                       const isSelected = cell.inCurrentMonth && selectedDate === dateYmd
                       const isBlockedByApi = blockedDates.has(dateYmd)
+                      const isWeekend = cell.inCurrentMonth && isWeekendUtcDate(new Date(Date.UTC(viewedYear, viewedMonth - 1, cell.day)))
                       const isPastOrToday = dateYmd <= todayYmd
-                      const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isPastOrToday || loadingBlockedDays
+                      const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPastOrToday || loadingBlockedDays
 
                       return (
                         <button
@@ -659,8 +676,9 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                 const dateYmd = formatYmd(viewedYear, viewedMonth, cell.day)
                 const isSelected = cell.inCurrentMonth && selectedDate === dateYmd
                 const isBlockedByApi = blockedDates.has(dateYmd)
+                const isWeekend = cell.inCurrentMonth && isWeekendUtcDate(new Date(Date.UTC(viewedYear, viewedMonth - 1, cell.day)))
                 const isPastOrToday = dateYmd <= todayYmd
-                const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isPastOrToday || loadingBlockedDays
+                const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPastOrToday || loadingBlockedDays
 
                 return (
                   <button

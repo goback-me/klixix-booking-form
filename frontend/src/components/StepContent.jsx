@@ -34,6 +34,9 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
   const isAutoAdvanceStep = step === 0 || step === 1
   const isDateTimeStep = step === 2
   const isAddonsStep = step === 4
+  const contentScrollClass = isSummaryStep
+    ? 'no-scrollbar flex-1 min-h-0 overflow-hidden'
+    : 'no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden'
   const shouldShowFooter = !isAutoAdvanceStep || Boolean(submitError) || Boolean(validationError)
   const footerPaddingClass = (isDateTimeStep || isAddonsStep) ? 'p-2 sm:p-4 md:p-5' : 'p-3 sm:p-4 md:p-5'
   const footerClass = isSummaryStep
@@ -42,7 +45,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
 
   return (
     <>
-      <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+      <div className={contentScrollClass}>
         {step !== 0 && !isSummaryStep && (
           <div className="sm:hidden px-3 pt-2 pb-1">
             <button

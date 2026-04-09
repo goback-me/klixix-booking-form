@@ -1,5 +1,6 @@
 import { BadgeCheck, CalendarDays, Clock3, MapPin, User, Wrench, WalletCards } from 'lucide-react'
 import { getAddonsByWorkshopId } from '../../constants/addons'
+import { useEffect } from 'react'
 
 /** @type {Record<string, string>} */
 const workshopAddresses = {
@@ -28,23 +29,30 @@ export default function Step5Summary({ bookingData }) {
   const contactEmail = carDetails?.email || 'Not provided'
   const contactPhone = carDetails?.phone || 'Not provided'
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [])
+
   return (
-    <div className="p-3 sm:p-5 md:p-6 flex flex-col min-w-0">
-      <div className="flex-1 flex flex-col">
-        <h2 className="text-[2rem] sm:text-3xl font-normal text-gray-900 text-center mb-3" style={{ fontFamily: 'var(--font-display)' }}>
+    <div className="p-2.5 sm:p-5 md:p-6 flex flex-col min-w-0 h-full overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <h2 className="text-[1.6rem] sm:text-3xl font-normal text-gray-900 text-center mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-display)' }}>
           Booking summary!
         </h2>
-        <div className="border-t border-gray-200 mb-4" />
+        <div className="border-t border-gray-200 mb-2 sm:mb-4" />
 
-        <p className="text-center text-[1.9rem] sm:text-3xl md:text-4xl leading-tight text-gray-800 mb-4 break-words" style={{ fontFamily: 'var(--font-display)' }}>
+        <p className="text-center text-[1.35rem] sm:text-3xl md:text-4xl leading-tight text-gray-800 mb-2 sm:mb-4 break-words" style={{ fontFamily: 'var(--font-display)' }}>
           Thank you, your booking request
           <br />
           has been received!
         </p>
 
-        <div className="flex justify-center mb-4 sm:mb-8">
+        <div className="flex justify-center mb-2 sm:mb-8">
           <div className="relative">
-            <BadgeCheck className="h-24 w-24 sm:h-28 sm:w-28 text-emerald-500" strokeWidth={1.8} />
+            <BadgeCheck className="h-14 w-14 sm:h-28 sm:w-28 text-emerald-500" strokeWidth={1.8} />
             <span className="absolute -top-2 left-1/2 -translate-x-1/2 h-2 w-0.5 bg-emerald-500 rounded" />
             <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-2 w-0.5 bg-emerald-500 rounded" />
             <span className="absolute top-1/2 -left-3 -translate-y-1/2 h-0.5 w-2 bg-emerald-500 rounded" />
@@ -56,34 +64,34 @@ export default function Step5Summary({ bookingData }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-6">
-          <div className="bg-gray-100 rounded-xl p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
+          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <WalletCards className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Total charges
             </p>
             <p className="text-base font-medium text-gray-900">$ {extrasTotal.toFixed(2)}</p>
           </div>
-          <div className="bg-gray-100 rounded-xl p-3 min-w-0 col-span-1">
+          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-1">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <Clock3 className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Time
             </p>
-            <p className="text-base font-medium text-gray-900">{time || 'Not selected'}{isFlexible ? ' (Flexible)' : ''}</p>
+            <p className="text-sm sm:text-base font-medium text-gray-900">{time || 'Not selected'}{isFlexible ? ' (Flexible)' : ''}</p>
           </div>
-          <div className="bg-gray-100 rounded-xl p-3 min-w-0 col-span-2 sm:col-span-1">
+          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-2 sm:col-span-1">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Date
             </p>
-            <p className="text-sm sm:text-base font-medium text-gray-900 break-words">{formatDate(date)}</p>
+            <p className="text-[13px] sm:text-base font-medium text-gray-900 break-words leading-[1.25]">{formatDate(date)}</p>
           </div>
-          <div className="bg-gray-100 rounded-xl p-3 min-w-0 col-span-2 sm:col-span-1">
+          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-2 sm:col-span-1">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Workshop
             </p>
-            <p className="text-sm sm:text-base font-medium text-gray-900 break-words">{workshopAddress}</p>
+            <p className="text-[13px] sm:text-base font-medium text-gray-900 break-words leading-[1.25]">{workshopAddress}</p>
           </div>
         </div>
 
@@ -128,13 +136,13 @@ export default function Step5Summary({ bookingData }) {
             </div>
           </div>
         </div>
+      </div>
 
-        <p className="text-center text-xs sm:text-sm text-gray-700 break-words mt-1 sm:mt-2">
-          {carDetails.email ? (
-            <>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)]">{carDetails.email}</span><span className="mx-2"> </span></>
-          ) : null}
-          Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:1300227663">1300 CAR ONE</a></span>
-        </p>
+      <div className="mt-auto text-center text-[11px] sm:text-sm leading-tight text-gray-700 break-words pb-1">
+        {carDetails.email ? (
+          <>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)]">{carDetails.email}</span><span className="mx-2"> </span></>
+        ) : null}
+        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:0736070215">1300 CAR ONE</a></span>
       </div>
     </div>
   )

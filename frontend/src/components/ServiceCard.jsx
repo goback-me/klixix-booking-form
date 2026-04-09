@@ -88,19 +88,25 @@ export default function ServiceCard({
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
                                                                 {!isCompact && serviceAddress && (
-                                                                                                                                                <p className={`flex items-start gap-1.5 ${isWorkshop ? 'text-[13px] sm:text-sm leading-[1.3] line-clamp-1 mt-1 font-display' : 'text-xs sm:text-sm line-clamp-2'} mb-1 break-words text-gray-600`}>
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-sm leading-[1.3] line-clamp-1 mt-1 font-display' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2'} mb-1 break-words text-gray-600`}
+                                                                    >
                     <MapPin size={14} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
                     {serviceAddress}
                   </p>
                 )}
                 {!isCompact && serviceTime && (
-                                                                                                                                                <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-[13px] sm:text-sm leading-[1.3] font-display' : 'text-xs sm:text-sm'} mb-1 text-gray-600`}>
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-sm leading-[1.3] font-display' : 'flex items-center gap-1.5 text-xs sm:text-sm'} mb-1 text-gray-600`}
+                                                                    >
                     <Clock size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
                   </p>
                 )}
                 {!isCompact && servicePhone && (
-                                                                        <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-[13px] sm:text-sm leading-[1.3]' : 'text-xs sm:text-sm'} font-medium text-gray-600`}>
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-sm leading-[1.3]' : 'flex items-center gap-1.5 text-xs sm:text-sm'} font-medium text-gray-600`}
+                                                                    >
                     <Phone size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {servicePhone}
                   </p>
