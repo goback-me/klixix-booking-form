@@ -80,9 +80,9 @@ export default function ServiceCard({
                                                 <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2.5 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
-                        <span className={`text-[rgba(255,77,36,1)] font-semibold ${isCompact ? 'text-[12px] sm:text-lg' : 'text-sm sm:text-lg'} leading-none`}>{servicePrice}</span>
+                        <span className={`text-[rgba(255,77,36,1)] font-semibold ${isCompact ? 'text-[18px] sm:text-[18px]' : 'text-sm sm:text-lg'} leading-none`}>{servicePrice}</span>
                     )}
-                                                                                <h3 className={`${isCompact ? 'text-[13px] sm:text-sm leading-[1.2]' : isWorkshop ? 'text-[16px] sm:text-[22px] md:text-[24px] leading-[1.15] tracking-[-0.01em]' : 'text-[18px] sm:text-[20px] md:text-[18px] leading-[1.18] tracking-[-0.01em]'} font-medium break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
+                                                                                <h3 className={`${isCompact ? 'text-[18px] sm:text-[18px] leading-[1.2]' : isWorkshop ? 'text-[16px] sm:text-[22px] md:text-[24px] leading-[1.15] tracking-[-0.01em]' : 'text-[18px] sm:text-[20px] md:text-[18px] leading-[1.18] tracking-[-0.01em]'} font-medium break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
                         {serviceName}
                     </h3>
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}

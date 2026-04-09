@@ -50,7 +50,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
     return (
       <p className="text-[18px] sm:text-[18px] leading-none font-semibold text-[rgba(255,77,36,1)]" style={{ fontFamily: 'var(--font-display)' }}>
         {service.priceLabel}
-        {service.priceSuffix ? <span className="text-[18px] sm:text-[20px] ml-1">{service.priceSuffix}</span> : null}
+        {service.priceSuffix ? <span className="text-[18px] sm:text-[18px] ml-1">{service.priceSuffix}</span> : null}
       </p>
     )
   }
@@ -92,7 +92,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
                       />
                     </div>
                     <div className="leading-tight mb-1">{renderGabbaPrice(service)}</div>
-                    <h3 className="text-[15px] sm:text-[18px] leading-tight text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
+                    <h3 className="text-[18px] sm:text-[18px] leading-tight text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
                       {service.name}
                     </h3>
                   </button>
@@ -121,7 +121,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[16px] sm:text-[18px] leading-none font-semibold text-[rgba(255,77,36,1)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>
+                    <p className="text-[18px] sm:text-[18px] leading-none font-semibold text-[rgba(255,77,36,1)] mb-1" style={{ fontFamily: 'var(--font-display)' }}>
                       {gabbaFeatured.priceLabel}
                     </p>
                     {/* <h3 className="text-[18px] sm:text-[24px] leading-tight text-gray-900 mb-1" style={{ fontFamily: 'var(--font-display)' }}>

@@ -32,7 +32,7 @@ const initialBookingData = {
     model: '',
     year: '',
     registration: '',
-    state: '',
+    state: 'QLD',
     additionalInfo: '',
   },
   extras: [],

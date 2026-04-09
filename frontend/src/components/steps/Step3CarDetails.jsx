@@ -1,12 +1,27 @@
+import { useEffect } from 'preact/hooks'
+
+/**
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any }} props
+ */
 export default function Step3CarDetails({ bookingData, updateBookingData, validationError }) {
   const details = bookingData.carDetails
 
   const auStates = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
 
+  useEffect(() => {
+    if (!details.state) {
+      updateBookingData('carDetails', { ...details, state: 'QLD' })
+    }
+  }, [details, updateBookingData])
+
+  /** @param {string} field
+   *  @param {string} value
+   */
   const handleChange = (field, value) => {
     updateBookingData('carDetails', { ...details, [field]: value })
   }
 
+  /** @param {string} value */
   const handleYearChange = (value) => {
     const numericYear = value.replace(/\D/g, '').slice(0, 4)
     handleChange('year', numericYear)
@@ -14,6 +29,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
 
   const errorFields = validationError?.fields || []
 
+  /** @param {string} field */
   const inputClass = (field) =>
     `w-full p-3 border rounded-xl focus:outline-none focus:border-[rgba(255,77,36,1)] ${
       errorFields.includes(field) ? 'border-red-400' : 'border-gray-300'
@@ -127,7 +143,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               onChange={(e) => handleChange('state', e.currentTarget.value)}
               className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[rgba(255,77,36,1)] bg-white"
             >
-              <option value="">Select state</option>
               {auStates.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
