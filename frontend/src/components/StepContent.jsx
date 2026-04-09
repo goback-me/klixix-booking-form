@@ -14,14 +14,18 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
   const isAutoAdvanceStep = step === 0 || step === 1
+  const isDateTimeStep = step === 2
+  const isAddonsStep = step === 4
+  const shouldShowFooter = !isAutoAdvanceStep || Boolean(submitError) || Boolean(validationError)
+  const footerPaddingClass = (isDateTimeStep || isAddonsStep) ? 'p-2 sm:p-4 md:p-5' : 'p-3 sm:p-4 md:p-5'
   const footerClass = isSummaryStep
-    ? 'mobile-safe-footer border-t border-gray-200 p-3 sm:p-4 md:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
-    : 'mobile-safe-footer border-t border-gray-200 p-3 sm:p-4 md:p-5 flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0'
+    ? `mobile-safe-footer border-t border-gray-200 ${footerPaddingClass} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0`
+    : `mobile-safe-footer border-t border-gray-200 ${footerPaddingClass} flex flex-wrap items-center justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0`
 
   return (
     <>
       <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-        {step !== 0 && (
+        {step !== 0 && !isSummaryStep && (
           <div className="sm:hidden px-3 pt-2 pb-1">
             <button
               onClick={onPrev}
@@ -35,16 +39,8 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
             </button>
           </div>
         )}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="h-full"
-            style={{ willChange: 'transform, opacity' }}
-          >
+        {step === 2 ? (
+          <div className="h-full">
             <CurrentStep
               bookingData={bookingData}
               updateBookingData={updateBookingData}
@@ -52,17 +48,37 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
               onAutoAdvance={onAutoAdvance}
               onPrev={onPrev}
             />
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="h-full"
+              style={{ willChange: 'transform, opacity' }}
+            >
+              <CurrentStep
+                bookingData={bookingData}
+                updateBookingData={updateBookingData}
+                validationError={validationError}
+                onAutoAdvance={onAutoAdvance}
+                onPrev={onPrev}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
-      <div className={footerClass}>
+      {shouldShowFooter && <div className={footerClass}>
         {submitError && (
           <p className="w-full text-sm text-red-500 mb-1">{submitError}</p>
         )}
         {validationError && (
           <p className="w-full text-sm text-red-500 mb-1">{validationError.message}</p>
         )}
-        {step !== 0 && step !== 1 && (
+        {step !== 0 && step !== 1 && !isSummaryStep && (
           <button
             onClick={onPrev}
             disabled={submitting}
@@ -72,16 +88,16 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
           </button>
         )}
         {isSummaryStep ? (
-          <div className="w-full sm:w-auto grid grid-cols-1 sm:flex sm:flex-nowrap items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+          <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-nowrap items-stretch sm:items-center justify-end gap-2 sm:gap-3">
             <button
               onClick={onReset}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-black hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:w-auto px-3 sm:px-6 py-2 bg-gray-900 text-white rounded-full hover:bg-black hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Make another booking
             </button>
             <button
               onClick={onReset}
-              className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:w-auto px-3 sm:px-6 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Back to home
             </button>
@@ -109,7 +125,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
             </button>
           )
         )}
-      </div>
+      </div>}
     </>
   )
 }

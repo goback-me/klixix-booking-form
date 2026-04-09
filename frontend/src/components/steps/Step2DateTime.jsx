@@ -17,6 +17,15 @@ const monthNames = [
   'December',
 ]
 
+/**
+ * @typedef {{
+ *   label: string,
+ *   available: boolean,
+ *   disabled?: boolean,
+ * }} TimeSlot
+ */
+
+/** @type {TimeSlot[]} */
 const morningSlots = [
   { label: '8:00 AM', available: true },
   { label: '8:30 AM', available: true },
@@ -29,6 +38,7 @@ const morningSlots = [
   { label: '12:00 PM', available: true },
 ]
 
+/** @type {TimeSlot[]} */
 const afternoonSlots = [
   { label: '1:00 PM', available: true },
   { label: '1:30 PM',  available: true},
@@ -41,14 +51,21 @@ const afternoonSlots = [
   { label: '5:00 PM', available: true },
 ]
 
+/** @param {number | string} value */
 function pad(value) {
   return String(value).padStart(2, '0')
 }
 
+/**
+ * @param {number} year
+ * @param {number} month
+ * @param {number} day
+ */
 function formatYmd(year, month, day) {
   return `${year}-${pad(month)}-${pad(day)}`
 }
 
+/** @param {string} value */
 function parseYmd(value) {
   if (typeof value !== 'string') return null
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -82,6 +99,10 @@ function getAustralianDateParts(date = new Date()) {
   }
 }
 
+/**
+ * @param {number} year
+ * @param {number} month
+ */
 function buildCalendarCells(year, month) {
   const firstWeekdaySundayBased = new Date(Date.UTC(year, month - 1, 1)).getUTCDay()
   const leadingDays = (firstWeekdaySundayBased + 6) % 7
@@ -115,25 +136,34 @@ function buildCalendarCells(year, month) {
   return cells
 }
 
+/**
+ * @param {Date} date
+ * @param {number} amount
+ */
 function addDays(date, amount) {
   const result = new Date(date.getTime())
   result.setUTCDate(result.getUTCDate() + amount)
   return result
 }
 
+/** @param {Date} date */
 function dateToYmd(date) {
   return formatYmd(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
 }
 
+/** @param {Date} date */
 function getWeekdayLabel(date) {
   const weekday = date.getUTCDay()
   return weekdays[weekday === 0 ? 6 : weekday - 1]
 }
 
+/**
+ * @param {{ slot: TimeSlot, selected: boolean, onClick: (label: string) => void }} props
+ */
 function SlotButton({ slot, selected, onClick }) {
-  const baseClass = 'group relative rounded-xl border px-2 py-1.5 sm:px-3 sm:py-2.5 text-xs sm:text-[0.95rem] font-semibold text-left transition-all duration-200'
-  const disabledClass = slot.disabled ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-800 border-gray-200 hover:border-[rgba(255,77,36,0.75)] hover:text-[rgba(255,77,36,1)] hover:bg-[rgba(255,77,36,0.08)] hover:shadow-[0_4px_10px_rgba(255,77,36,0.16)] hover:-translate-y-[1px]'
-  const selectedClass = selected ? 'border-[rgba(255,77,36,1)] bg-white text-[rgba(255,77,36,1)] shadow-[0_0_0_1px_rgba(255,77,36,1),0_8px_18px_rgba(255,77,36,0.12)] ring-0' : ''
+  const baseClass = 'group relative rounded-xl border px-2 py-1.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium text-left transition'
+  const disabledClass = slot.disabled ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-800 border-gray-200 hover:border-gray-300'
+  const selectedClass = selected ? 'ring-2 ring-orange-400 border-orange-500' : ''
 
   return (
     <button
@@ -153,6 +183,9 @@ function SlotButton({ slot, selected, onClick }) {
   )
 }
 
+/**
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void }} props
+ */
 export default function Step2DateTime({ bookingData, updateBookingData }) {
   const nowInAu = useMemo(() => getAustralianDateParts(), [])
   const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
@@ -163,8 +196,11 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
   const selectedDate = bookingData.date || ''
   const selectedTime = bookingData.time || ''
   const isFlexible = bookingData.isFlexible || false
+  /** @param {string} val */
   const setSelectedDate = (val) => updateBookingData('date', val)
+  /** @param {string} val */
   const setSelectedTime = (val) => updateBookingData('time', val)
+  /** @param {boolean | ((prev: boolean) => boolean)} val */
   const setIsFlexible = (val) => {
     const newVal = typeof val === 'function' ? val(isFlexible) : val
     updateBookingData('isFlexible', newVal)
@@ -184,19 +220,14 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
     return addDays(new Date(Date.UTC(nowInAu.year, nowInAu.month - 1, nowInAu.day)), offset)
   }, [nowInAu.hour, nowInAu.year, nowInAu.month, nowInAu.day])
 
-  const maxSelectableDate = useMemo(
-    () => new Date(Date.UTC(nowInAu.year + 1, 11, 31)),
-    [nowInAu.year]
+  const latestSelectableDate = useMemo(
+    () => addDays(earliestSelectableDate, 179),
+    [earliestSelectableDate]
   )
-
-  const selectableRangeDays = useMemo(() => {
-    const dayMs = 24 * 60 * 60 * 1000
-    return Math.max(1, Math.ceil((maxSelectableDate.getTime() - earliestSelectableDate.getTime()) / dayMs) + 1)
-  }, [earliestSelectableDate, maxSelectableDate])
 
   const dateOptions = useMemo(() => {
     const options = []
-    const maxDays = selectableRangeDays
+    const maxDays = 180
     for (let i = 0; i < maxDays; i += 1) {
       const date = addDays(earliestSelectableDate, i)
       const ymd = dateToYmd(date)
@@ -211,12 +242,13 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
       })
     }
     return options
-  }, [earliestSelectableDate, blockedDates, selectableRangeDays])
+  }, [earliestSelectableDate, blockedDates])
 
-  const visibleDates = useMemo(() => {
-    const visibleCount = 5
-    return dateOptions.slice(visibleStartIndex, visibleStartIndex + visibleCount)
-  }, [dateOptions, visibleStartIndex])
+  const visibleCount = 5
+  const visibleDates = useMemo(
+    () => dateOptions.slice(visibleStartIndex, visibleStartIndex + visibleCount),
+    [dateOptions, visibleStartIndex, visibleCount]
+  )
 
   useEffect(() => {
     if (!selectedTime) {
@@ -241,7 +273,7 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
       try {
         const params = new URLSearchParams({
           workshop: workshopId,
-          in_days: String(selectableRangeDays),
+          in_days: '180',
         })
         const response = await fetch(`${apiBaseUrl}/api/unavailable-days?${params.toString()}`)
         if (!response.ok) {
@@ -287,7 +319,7 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
     return () => {
       isMounted = false
     }
-  }, [apiBaseUrl, selectableRangeDays, workshopId, todayYmd])
+  }, [apiBaseUrl, workshopId, todayYmd])
 
   useEffect(() => {
     if (loadingBlockedDays) return
@@ -298,136 +330,163 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
     const targetDate = validDate ? selectedDate : firstAvailableOption?.ymd || selectedDate
     const targetParts = parseYmd(targetDate)
 
+    if (targetParts) {
+      setViewedMonth(targetParts.month)
+      setViewedYear(targetParts.year)
+    }
+
     if (selectedDate !== targetDate && targetDate) {
       setSelectedDate(targetDate)
     }
-
-    // Only auto-sync calendar view if no date is selected yet
-    if (!selectedDate && targetParts) {
-      if (viewedMonth !== targetParts.month) {
-        setViewedMonth(targetParts.month)
-      }
-      if (viewedYear !== targetParts.year) {
-        setViewedYear(targetParts.year)
-      }
-    }
   }, [blockedDates, dateOptions, loadingBlockedDays, selectedDate])
 
-  const yearOptions = useMemo(
-    () => [nowInAu.year, nowInAu.year + 1],
-    [nowInAu.year]
-  )
+  const yearOptions = useMemo(() => {
+    const startYear = earliestSelectableDate.getUTCFullYear()
+    const endYear = latestSelectableDate.getUTCFullYear()
+    const years = []
+
+    for (let year = startYear; year <= endYear; year += 1) {
+      years.push(year)
+    }
+
+    return years
+  }, [earliestSelectableDate, latestSelectableDate])
 
   const monthOptions = useMemo(() => {
-    if (viewedYear > nowInAu.year) {
-      // Future year: show all months
-      return monthNames.map((name, idx) => ({ name, value: idx + 1 }))
-    } else {
-      // Current year: only show current and future months
-      return monthNames
-        .map((name, idx) => ({ name, value: idx + 1 }))
-        .filter((month) => month.value >= nowInAu.month)
+    const minMonth = viewedYear === earliestSelectableDate.getUTCFullYear()
+      ? earliestSelectableDate.getUTCMonth() + 1
+      : 1
+    const maxMonth = viewedYear === latestSelectableDate.getUTCFullYear()
+      ? latestSelectableDate.getUTCMonth() + 1
+      : 12
+
+    const months = []
+    for (let month = minMonth; month <= maxMonth; month += 1) {
+      months.push(month)
     }
-  }, [viewedYear, nowInAu.year, nowInAu.month])
+
+    return months
+  }, [viewedYear, earliestSelectableDate, latestSelectableDate])
+
+  useEffect(() => {
+    if (monthOptions.length === 0) return
+
+    const minMonth = monthOptions[0]
+    const maxMonth = monthOptions[monthOptions.length - 1]
+
+    if (viewedMonth < minMonth) {
+      setViewedMonth(minMonth)
+      return
+    }
+
+    if (viewedMonth > maxMonth) {
+      setViewedMonth(maxMonth)
+    }
+  }, [viewedMonth, monthOptions])
 
   const calendarCells = useMemo(
     () => buildCalendarCells(viewedYear, viewedMonth),
     [viewedYear, viewedMonth]
   )
 
-  const visibleCount = 5
   const maxStartIndex = Math.max(0, dateOptions.length - visibleCount)
   const canMovePrev = visibleStartIndex > 0
   const canMoveNext = visibleStartIndex < maxStartIndex
 
-  const scrollMobileDateStripTo = (ymd) => {
-    const targetIndex = dateOptions.findIndex((option) => option.ymd === ymd)
-    if (targetIndex === -1) return
+  const moveNextDateWindow = () => {
+    setVisibleStartIndex((prev) => {
+      if (prev >= maxStartIndex) return prev
 
-    const nextVisibleStart = Math.min(Math.max(0, targetIndex - 2), maxStartIndex)
-    setVisibleStartIndex(nextVisibleStart)
+      const nextStart = Math.min(maxStartIndex, prev + 1)
+      const nextWindow = dateOptions.slice(nextStart, nextStart + visibleCount)
+      if (nextWindow.length === 0) return nextStart
+
+      const first = nextWindow[0]
+      const monthBoundaryOffset = nextWindow.findIndex(
+        (option) => option.month !== first.month || option.year !== first.year
+      )
+
+      if (monthBoundaryOffset > 0) {
+        return Math.min(maxStartIndex, nextStart + monthBoundaryOffset)
+      }
+
+      return nextStart
+    })
   }
 
-  const handleManualDateSelect = (ymd, shouldClosePopup = false) => {
-    setSelectedDate(ymd)
-    scrollMobileDateStripTo(ymd)
+  useEffect(() => {
+    if (!selectedDate) return
 
-    const targetParts = parseYmd(ymd)
-    if (targetParts) {
-      setViewedMonth(targetParts.month)
-      setViewedYear(targetParts.year)
-    }
+    const selectedIndex = dateOptions.findIndex((option) => option.ymd === selectedDate)
+    if (selectedIndex < 0) return
 
-    if (shouldClosePopup) {
-      setShowCalendarPopup(false)
+    const isVisible =
+      selectedIndex >= visibleStartIndex &&
+      selectedIndex < visibleStartIndex + visibleCount
+
+    if (!isVisible) {
+      const targetStartIndex = Math.min(
+        Math.max(0, selectedIndex - Math.floor(visibleCount / 2)),
+        maxStartIndex
+      )
+      setVisibleStartIndex(targetStartIndex)
     }
-  }
+  }, [selectedDate, dateOptions, visibleCount, maxStartIndex])
 
   return (
-    <div className="p-3 sm:p-5 md:p-4 flex flex-col min-w-0">
+    <div className="p-2.5 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <div className={`flex items-center justify-between gap-2 mb-1 transition ${showCalendarPopup ? 'lg:blur-none blur-sm opacity-70' : ''}`}>
-          <h2 className="text-lg sm:text-2xl md:text-[2rem] text-gray-900 break-words">Drop off date &amp; time</h2>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <h2 className="text-lg sm:text-2xl md:text-3xl font-normal text-gray-900 break-words">Drop off date &amp; time</h2>
           <button
             type="button"
             onClick={() => setIsFlexible((prev) => !prev)}
             className="flex items-center gap-2 border border-gray-200 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 bg-white shrink-0"
           >
-            <span className={`w-9 sm:w-11 h-5 sm:h-6 rounded-full relative transition ${isFlexible ? 'bg-[rgba(255,77,36,1)]' : 'bg-gray-300'}`}>
+            <span className={`w-9 sm:w-11 h-5 sm:h-6 rounded-full relative transition ${isFlexible ? 'bg-orange-500' : 'bg-gray-300'}`}>
               <span className={`absolute top-0.5 h-4 sm:h-5 w-4 sm:w-5 rounded-full bg-white transition ${isFlexible ? 'left-4 sm:left-5' : 'left-0.5'}`} />
             </span>
             <span className="text-xs sm:text-sm text-gray-800">I'm flexible</span>
           </button>
         </div>
-        <p className={`text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 transition ${showCalendarPopup ? 'lg:blur-none blur-sm opacity-70' : ''}`}>Select your preferred appointment slot.</p>
+        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-6">Select your preferred appointment slot.</p>
 
         {/* Mobile: Compact 5-date picker */}
-        <div className="lg:hidden rounded-[22px] bg-white p-3.5 border border-gray-100 relative shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-          <div className={`transition ${showCalendarPopup ? 'blur-sm opacity-60 pointer-events-none' : ''}`}>
-          <div className="flex items-center gap-2.5 mb-3.5">
+        <div className="lg:hidden bg-gray-50 rounded-2xl p-2.5 sm:p-4 md:p-5 border border-gray-100 relative">
+          <div className="flex items-center justify-between gap-2 mb-2">
               <button
                 type="button"
-                onClick={() => {
-                  if (!showCalendarPopup) {
-                    const targetDate = selectedDate || todayYmd
-                    const targetParts = parseYmd(targetDate)
-                    if (targetParts) {
-                      setViewedMonth(targetParts.month)
-                      setViewedYear(targetParts.year)
-                    }
-                  }
-                  setShowCalendarPopup((prev) => !prev)
-                }}
-                className="w-[64%] max-w-[15rem] min-w-0 bg-white border border-gray-200 rounded-lg px-3 py-2 text-left text-sm font-semibold text-gray-900 shadow-[0_1px_2px_rgba(15,23,42,0.03)] hover:border-gray-300"
+                onClick={() => setShowCalendarPopup((prev) => !prev)}
+                className="flex-1 min-w-0 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-left text-sm font-semibold text-gray-900"
               >
                 <span className="inline-flex items-center gap-2">
-                  <span>{monthNames[viewedMonth - 1]}</span>
+                  <span>{monthNames[viewedMonth - 1]} {viewedYear}</span>
                   <span className="text-gray-400">▾</span>
                 </span>
               </button>
 
-              <div className="ml-auto flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setVisibleStartIndex((prev) => Math.max(0, prev - 1))}
                   disabled={!canMovePrev}
-                  className={`w-9 h-9 rounded-lg border flex items-center justify-center text-lg transition shadow-[0_1px_2px_rgba(15,23,42,0.03)] ${canMovePrev ? 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white' : 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-100'}`}
+                  className={`w-8 h-8 rounded-xl border ${canMovePrev ? 'border-gray-200 text-gray-700 hover:border-gray-300' : 'border-gray-200 text-gray-300 cursor-not-allowed'} bg-white`}
                 >
                   ‹
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setVisibleStartIndex((prev) => Math.min(maxStartIndex, prev + 1))}
+                  onClick={moveNextDateWindow}
                   disabled={!canMoveNext}
-                  className={`w-9 h-9 rounded-lg border flex items-center justify-center text-lg transition shadow-[0_1px_2px_rgba(15,23,42,0.03)] ${canMoveNext ? 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white' : 'border-gray-200 text-gray-300 cursor-not-allowed bg-gray-100'}`}
+                  className={`w-8 h-8 rounded-xl border ${canMoveNext ? 'border-gray-200 text-gray-700 hover:border-gray-300' : 'border-gray-200 text-gray-300 cursor-not-allowed'} bg-white`}
                 >
                   ›
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-1.5 mb-2.5">
+            <div className="grid grid-cols-5 gap-1 mb-1">
               {visibleDates.map((option) => {
                 const isSelected = selectedDate === option.ymd
                 return (
@@ -435,41 +494,41 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                     key={option.ymd}
                     type="button"
                     disabled={option.disabled || loadingBlockedDays}
-                    onClick={() => !option.disabled && !loadingBlockedDays && handleManualDateSelect(option.ymd)}
-                    className={`rounded-lg border py-2 text-center transition shadow-[0_1px_2px_rgba(15,23,42,0.03)] ${isSelected ? 'border-[rgba(255,77,36,1)] bg-[rgba(255,77,36,1)] text-white shadow-[0_6px_14px_rgba(255,77,36,0.22)]' : option.disabled ? 'border-gray-200 bg-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 bg-white hover:border-[rgba(255,77,36,0.75)] hover:bg-[rgba(255,77,36,0.08)] hover:text-[rgba(255,77,36,1)] hover:shadow-[0_4px_10px_rgba(255,77,36,0.14)]'}`}
+                    onClick={() => !option.disabled && !loadingBlockedDays && setSelectedDate(option.ymd)}
+                    className={`rounded-xl border px-1.5 py-1.5 text-center transition ${isSelected ? 'border-orange-500 bg-orange-50' : option.disabled ? 'border-gray-200 bg-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 bg-white hover:border-gray-300'}`}
                   >
-                    <div className={`text-[8px] uppercase tracking-wider font-medium ${isSelected ? 'text-white' : 'text-gray-500'}`}>{option.weekdayLabel}</div>
-                    <div className={`mt-1.5 text-base font-bold ${isSelected ? 'text-white' : 'text-gray-900'}`}>{option.day}</div>
+                    <div className="text-[9px] uppercase tracking-[0.2em] text-gray-400">{option.weekdayLabel}</div>
+                    <div className="mt-0.5 text-sm font-semibold text-gray-900">{option.day}</div>
                   </button>
                 )
               })}
             </div>
-          </div>
 
             {showCalendarPopup && (
-              <>
+              <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
                 <button
                   type="button"
                   onClick={() => setShowCalendarPopup(false)}
-                  className="fixed inset-0 z-20 bg-white/35 backdrop-blur-md"
+                  className="absolute inset-0 bg-white/35 backdrop-blur-md"
+                  aria-label="Close calendar"
                 />
-                <div className="absolute inset-x-4 top-full z-30 mt-2 rounded-[26px] bg-white border border-gray-100 p-3.5 shadow-[0_18px_50px_rgba(15,23,42,0.16)] pointer-events-auto">
+                <div className="relative w-full max-w-[22rem] rounded-3xl bg-white border border-gray-200 p-4 shadow-2xl">
                   <div className="flex items-center gap-2 mb-3">
                     <select
                       value={String(viewedMonth)}
                       onChange={(e) => setViewedMonth(Number.parseInt(e.currentTarget.value, 10))}
-                      className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                      className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800"
                     >
                       {monthOptions.map((month) => (
-                        <option key={month.value} value={String(month.value)}>
-                          {month.name}
+                        <option key={month} value={String(month)}>
+                          {monthNames[month - 1]}
                         </option>
                       ))}
                     </select>
                     <select
                       value={String(viewedYear)}
                       onChange={(e) => setViewedYear(Number.parseInt(e.currentTarget.value, 10))}
-                      className="w-28 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                      className="w-28 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800"
                     >
                       {yearOptions.map((year) => (
                         <option key={year} value={String(year)}>
@@ -480,15 +539,16 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                     <button
                       type="button"
                       onClick={() => setShowCalendarPopup(false)}
-                      className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                      className="h-10 w-10 rounded-xl border border-gray-300 text-gray-700 leading-none"
+                      aria-label="Close"
                     >
-                      Close
+                      ×
                     </button>
                   </div>
 
                   <div className="grid grid-cols-7 gap-1 mb-2">
                     {weekdays.map((day) => (
-                      <div key={day} className="text-center text-gray-400 text-[10px] uppercase py-1.5">{day}</div>
+                      <div key={day} className="text-center text-gray-400 text-[10px] uppercase py-1">{day}</div>
                     ))}
                   </div>
 
@@ -507,14 +567,15 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                           disabled={isDisabled}
                           onClick={() => {
                             if (!isDisabled) {
-                              handleManualDateSelect(dateYmd, true)
+                              setSelectedDate(dateYmd)
+                              setShowCalendarPopup(false)
                             }
                           }}
                           className={`h-10 rounded-xl text-xs transition ${isSelected
-                            ? 'bg-[rgba(255,77,36,1)] text-white font-semibold shadow-[0_6px_14px_rgba(255,77,36,0.24)]'
+                            ? 'bg-orange-500 text-white font-semibold'
                             : isDisabled
                               ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-gray-800 hover:bg-[rgba(255,77,36,0.08)] hover:text-[rgba(255,77,36,1)] hover:border-[rgba(255,77,36,0.75)]'
+                              : 'text-gray-800 hover:bg-gray-100 border border-transparent'
                           } ${cell.inCurrentMonth ? 'border border-transparent' : 'opacity-40'}`}
                           title={isDisabled ? 'Unavailable date' : 'Available date'}
                         >
@@ -524,14 +585,14 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                     })}
                   </div>
                 </div>
-              </>
+              </div>
             )}
         </div>
 
-        <div className={`lg:hidden space-y-3 transition ${showCalendarPopup ? 'blur-sm opacity-60 pointer-events-none' : ''}`}>
-            <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h3 className="text-sm font-medium text-gray-900 mb-2.5">Morning available times</h3>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className="lg:hidden space-y-2.5 sm:space-y-4">
+            <div className="bg-gray-50 rounded-2xl p-2.5 sm:p-4 border border-gray-100">
+              <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Morning available times</h3>
+              <div className="grid grid-cols-3 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-3">
                 {morningSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}
@@ -543,9 +604,9 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-              <h3 className="text-sm font-medium text-gray-900 mb-2.5">Afternoon available times</h3>
-              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="bg-gray-50 rounded-2xl p-2.5 sm:p-4 border border-gray-100">
+              <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Afternoon available times</h3>
+              <div className="grid grid-cols-3 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-3">
                 {afternoonSlots.map((slot) => (
                   <SlotButton
                     key={slot.label}
@@ -559,25 +620,25 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
           </div>
 
         {/* Desktop: Full calendar with time slots side-by-side */}
-        <div className="hidden lg:grid lg:grid-cols-5 gap-4">
-          {/* Left: Calendar - Column 1-2 */}
-          <div className="col-span-2 bg-white rounded-2xl p-3.5 border border-gray-100 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div className="hidden lg:grid lg:grid-cols-3 gap-6">
+          {/* Left: Calendar */}
+          <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
             <div className="flex items-center gap-2 mb-3">
               <select
                 value={String(viewedMonth)}
                 onChange={(e) => setViewedMonth(Number.parseInt(e.currentTarget.value, 10))}
-                className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold text-gray-800"
+                className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold text-gray-800"
               >
                 {monthOptions.map((month) => (
-                  <option key={month.value} value={String(month.value)}>
-                    {month.name}
+                  <option key={month} value={String(month)}>
+                    {monthNames[month - 1]}
                   </option>
                 ))}
               </select>
               <select
                 value={String(viewedYear)}
                 onChange={(e) => setViewedYear(Number.parseInt(e.currentTarget.value, 10))}
-                className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-semibold text-gray-800"
+                className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold text-gray-800"
               >
                 {yearOptions.map((year) => (
                   <option key={year} value={String(year)}>
@@ -587,13 +648,13 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
               </select>
             </div>
 
-            <div className="grid grid-cols-7 gap-2 mb-2.5">
+            <div className="grid grid-cols-7 gap-1 mb-2">
               {weekdays.map((day) => (
-                <div key={day} className="text-center text-gray-600 text-sm font-semibold py-2 uppercase">{day}</div>
+                <div key={day} className="text-center text-gray-400 text-[10px] uppercase font-semibold py-1">{day}</div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-7 gap-1">
               {calendarCells.map((cell, index) => {
                 const dateYmd = formatYmd(viewedYear, viewedMonth, cell.day)
                 const isSelected = cell.inCurrentMonth && selectedDate === dateYmd
@@ -611,11 +672,11 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
                         setSelectedDate(dateYmd)
                       }
                     }}
-                    className={`h-10 rounded-lg text-sm font-semibold transition ${isSelected
-                      ? 'bg-[rgba(255,77,36,1)] text-white'
+                    className={`h-8 rounded-lg text-xs font-medium transition ${isSelected
+                      ? 'bg-orange-500 text-white'
                       : isDisabled
                         ? 'text-gray-300 cursor-not-allowed'
-                        : 'text-gray-800 hover:bg-[rgba(255,77,36,0.04)] hover:text-[rgba(255,77,36,1)] hover:border-[rgba(255,77,36,0.55)] border border-gray-200'
+                        : 'text-gray-800 hover:bg-gray-100 border border-gray-200'
                     } ${cell.inCurrentMonth ? '' : 'opacity-30'}`}
                     title={isDisabled ? 'Unavailable date' : 'Available date'}
                   >
@@ -626,10 +687,10 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
             </div>
           </div>
 
-          {/* Right: Time slots - Column 3-5 */}
-          <div className="col-span-3 flex flex-col gap-3.5">
-            <div className="rounded-[22px] border border-gray-100 bg-white p-3 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2.5">Morning available times</h3>
+          {/* Right: Time slots */}
+          <div className="col-span-2 space-y-3">
+            <div>
+              <h3 className="text-xs font-semibold text-gray-900 mb-2">Morning available times</h3>
               <div className="grid grid-cols-4 gap-2">
                 {morningSlots.map((slot) => (
                   <SlotButton
@@ -642,8 +703,8 @@ export default function Step2DateTime({ bookingData, updateBookingData }) {
               </div>
             </div>
 
-            <div className="rounded-[22px] border border-gray-100 bg-white p-3 shadow-[0_6px_20px_rgba(15,23,42,0.04)]">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2.5">Afternoon available times</h3>
+            <div>
+              <h3 className="text-xs font-semibold text-gray-900 mb-2">Afternoon available times</h3>
               <div className="grid grid-cols-4 gap-2">
                 {afternoonSlots.map((slot) => (
                   <SlotButton

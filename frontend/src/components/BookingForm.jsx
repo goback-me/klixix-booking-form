@@ -1,21 +1,9 @@
 import { useState } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
+import { getAddonLookupByWorkshopId } from '../constants/addons'
 
 const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
-
-const extraServicesMap = {
-  1: 'Tyre rotation & balancing',
-  2: 'Engine flush plus',
-  3: 'A/C clean & deodoriser',
-  4: 'Wiper blade replacement',
-  5: 'A/C re-gas & full service',
-  6: 'Tyre puncture repair',
-  7: 'Brake calipers system',
-  8: 'Oil and filter change',
-  9: 'Body and Aesthetics',
-  10: 'Exhaust system servicing',
-}
 
 function formatDropOffTime(dateStr, timeStr) {
   if (!dateStr || !timeStr) return ''
@@ -121,6 +109,16 @@ export default function BookingForm() {
   const progressSteps = steps.slice(0, 5)
   const sidebarCurrentStep = Math.min(currentStep, progressSteps.length - 1)
   const sidebarAllCompleted = currentStep >= progressSteps.length
+  const completedStepIndexes = progressSteps
+    .map((_, index) => {
+      if (index === 4) {
+        // Add-ons is optional; mark as completed once user reaches summary.
+        return currentStep > 4
+      }
+      return validateStep(index, bookingData) === null
+    })
+    .map((isCompleted, index) => (isCompleted ? index : -1))
+    .filter((index) => index >= 0)
 
   const nextStep = () => {
     const error = validateStep(currentStep, bookingData)
@@ -143,6 +141,17 @@ export default function BookingForm() {
     setCurrentStep((prev) => Math.max(prev - 1, 0))
   }
 
+  const goToStepFromSidebar = (targetStep) => {
+    if (submitting) return
+
+    const isCurrent = targetStep === sidebarCurrentStep
+    const isCompleted = completedStepIndexes.includes(targetStep)
+    if (isCurrent || isCompleted) {
+      setValidationError(null)
+      setCurrentStep(targetStep)
+    }
+  }
+
   const resetSteps = () => {
     setCurrentStep(0)
     setBookingData(initialBookingData)
@@ -155,14 +164,15 @@ export default function BookingForm() {
     setSubmitError('')
 
     const { workshop, service, date, time, carDetails, extras } = bookingData
+    const addonLookup = getAddonLookupByWorkshopId(workshop?.workshopId)
 
     const jobTypeNames = []
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     extras.forEach((id) => {
-      if (extraServicesMap[id]) {
-        jobTypeNames.push(extraServicesMap[id])
-        selectedAddonNames.push(extraServicesMap[id])
+      if (addonLookup[id]?.name) {
+        jobTypeNames.push(addonLookup[id].name)
+        selectedAddonNames.push(addonLookup[id].name)
       }
     })
 
@@ -222,7 +232,13 @@ export default function BookingForm() {
 
   return (
     <div className="flex flex-col lg:flex-row bg-white w-full h-full min-w-0 overflow-hidden">
-      <Sidebar steps={progressSteps} currentStep={sidebarCurrentStep} allCompleted={sidebarAllCompleted} />
+      <Sidebar
+        steps={progressSteps}
+        currentStep={sidebarCurrentStep}
+        allCompleted={sidebarAllCompleted}
+        completedStepIndexes={completedStepIndexes}
+        onStepClick={goToStepFromSidebar}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <StepContent
           step={currentStep}

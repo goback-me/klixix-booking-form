@@ -1,6 +1,9 @@
 import { ArrowLeft } from 'lucide-react'
 import ServiceCard from '../ServiceCard'
 
+/**
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, onAutoAdvance?: (key: string, value: any) => void, onPrev?: () => void }} props
+ */
 export default function Step1Service({ bookingData, updateBookingData, onAutoAdvance, onPrev }) {
 
   const services = [
@@ -32,12 +35,12 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
   ]
 
   return (
-    <div className="p-3 sm:p-4 md:p-5 flex flex-col min-w-0">
+    <div className="p-2.5 sm:p-4 md:p-5 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <div className="sm:hidden mb-2">
+        <div className="sm:hidden mb-1">
           <div className="min-w-0">
-            <h2 className="text-[32px] leading-[1.08] tracking-[-0.015em] text-gray-900 mb-0.5 break-words">Select a service</h2>
-            <p className="text-md text-gray-600 break-words pb-2">What can we help you with today?</p>
+            <h2 className="text-[26px] leading-[1.08] tracking-[-0.015em] text-gray-900 mb-0.5 break-words">Select a service</h2>
+            <p className="text-[15px] text-gray-600 break-words pb-1">What can we help you with today?</p>
           </div>
         </div>
         <div className="hidden sm:flex items-center justify-start gap-4 mb-3 w-full">
@@ -55,7 +58,7 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
             <p className="text-md text-gray-600 break-words pb-2">What can we help you with today?</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 md:gap-3 auto-rows-max pb-6 sm:pb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2.5 md:gap-3 auto-rows-max pb-2 sm:pb-8">
               {services.map((service, idx) => (
                 <ServiceCard
                   key={service.id}
@@ -69,7 +72,7 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
                       updateBookingData('service', service)
                     }
                   }}
-                    containerHeight="h-[5.25rem] sm:h-[7rem] md:h-[5.5rem] lg:h-[7rem]"
+                    containerHeight="h-[4.75rem] sm:h-[7rem] md:h-[7rem] lg:h-[7rem]"
                     index={idx}
                 />
               ))}

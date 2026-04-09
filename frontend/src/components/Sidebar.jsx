@@ -34,21 +34,29 @@ function dotColor(isCompleted, isCurrent) {
   return 'bg-gray-300'
 }
 
-export default function Sidebar({ steps, currentStep, allCompleted = false }) {
+export default function Sidebar({ steps, currentStep, allCompleted = false, completedStepIndexes = [], onStepClick }) {
+  const completedSet = new Set(completedStepIndexes)
+
   return (
     <>
       {/* ── Mobile & Tablet horizontal stepper ── */}
       <div className="flex lg:hidden items-center px-1.5 sm:px-4 py-2 sm:py-3 bg-white border-b border-gray-200 flex-shrink-0">
         {steps.map((step, index) => {
-          const isCompleted = allCompleted || index < currentStep
+          const isCompleted = allCompleted || (completedSet.has(index) && index !== currentStep)
           const isCurrent = !allCompleted && index === currentStep
+          const isClickable = typeof onStepClick === 'function' && (allCompleted || isCurrent || completedSet.has(index))
           const isLast = index === steps.length - 1
-          const connectorCompleted = allCompleted || index < currentStep
-          const connectorCurrent = !allCompleted && index === currentStep
+          const connectorCompleted = allCompleted || completedSet.has(index)
+          const connectorCurrent = !allCompleted && index === currentStep && !connectorCompleted
 
           return (
             <div key={index} className={`flex items-center ${isLast ? '' : 'flex-1'}`}>
-              <div className="flex flex-col items-center shrink-0">
+              <button
+                type="button"
+                onClick={isClickable ? () => onStepClick(index) : undefined}
+                disabled={!isClickable}
+                className={`flex flex-col items-center shrink-0 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+              >
                 <div
                   className={`w-5 h-5 sm:w-8 sm:h-8 rounded-full flex items-center justify-center border transition ${
                     isCurrent ? 'stepper-active' : ''
@@ -92,7 +100,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                 >
                   {step}
                 </span>
-              </div>
+              </button>
 
               {!isLast && (
                 <div className="flex-1 flex items-center justify-center mx-1 mt-[-10px] gap-[2px]">
@@ -121,14 +129,21 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
         <div className="sidebar-styling p-3 lg:p-3.5 flex flex-col h-full min-h-0">
           <nav className="flex-1 overflow-y-auto pr-1">
             {steps.map((step, index) => {
-              const isCompleted = allCompleted || index < currentStep
+              const isCompleted = allCompleted || (completedSet.has(index) && index !== currentStep)
               const isCurrent = !allCompleted && index === currentStep
+              const isClickable = typeof onStepClick === 'function' && (allCompleted || isCurrent || completedSet.has(index))
               const isLast = index === steps.length - 1
-              const connectorCompleted = allCompleted || index < currentStep
-              const connectorCurrent = !allCompleted && index === currentStep
+              const connectorCompleted = allCompleted || completedSet.has(index)
+              const connectorCurrent = !allCompleted && index === currentStep && !connectorCompleted
 
               return (
-                <div key={index} className="flex gap-2.5">
+                <button
+                  key={index}
+                  type="button"
+                  onClick={isClickable ? () => onStepClick(index) : undefined}
+                  disabled={!isClickable}
+                  className={`w-full flex gap-2.5 text-left ${isClickable ? 'cursor-pointer' : 'cursor-default'}`}
+                >
                   <div className="flex flex-col items-center">
                     <div
                       className={`w-9 h-9 xl:w-10 xl:h-10 rounded-full flex items-center justify-center border transition ${
@@ -183,7 +198,7 @@ export default function Sidebar({ steps, currentStep, allCompleted = false }) {
                       {step}
                     </p>
                   </div>
-                </div>
+                </button>
               )
             })}
           </nav>
