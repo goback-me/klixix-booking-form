@@ -7,82 +7,84 @@ function toStr(value) {
   return String(value)
 }
 
-function buildWebhookParams(payload) {
-  const params = new URLSearchParams()
+function buildWebhookFields(payload) {
+  const fields = {}
 
   const jobTypeNames = Array.isArray(payload.job_type_names) ? payload.job_type_names : []
   const serviceAddons = Array.isArray(payload.service_addons) ? payload.service_addons : []
 
   // Human-readable keys requested for webhook integrations.
-  params.set('Workshop', toStr(payload.workshop))
-  params.set('Name', toStr(payload.name))
-  params.set('Phone', toStr(payload.phone))
-  params.set('Email', toStr(payload.email))
-  params.set('State', toStr(payload.state))
-  params.set('Registration Number', toStr(payload.registration_number))
-  params.set('Make', toStr(payload.make))
-  params.set('Model', toStr(payload.model))
-  params.set('Year', toStr(payload.year))
-  params.set('Drop Off Time', toStr(payload.drop_off_time))
-  params.set('Note', toStr(payload.note))
-  params.set('Booking Note', toStr(payload.booking_note))
-  params.set('Alert', toStr(payload.alert))
-  params.set('Is Flexible', toStr(payload.is_flexible))
+  fields.Workshop = toStr(payload.workshop)
+  fields.Name = toStr(payload.name)
+  fields.Phone = toStr(payload.phone)
+  fields.Email = toStr(payload.email)
+  fields.State = toStr(payload.state)
+  fields['Registration Number'] = toStr(payload.registration_number)
+  fields.Make = toStr(payload.make)
+  fields.Model = toStr(payload.model)
+  fields.Year = toStr(payload.year)
+  fields['Drop Off Time'] = toStr(payload.drop_off_time)
+  fields.Note = toStr(payload.note)
+  fields['Booking Note'] = toStr(payload.booking_note)
+  fields.Alert = toStr(payload.alert)
+  fields['Is Flexible'] = toStr(payload.is_flexible)
 
   // Summary keys plus indexed keys for line-item style display.
-  params.set('Job Type Names', jobTypeNames.join(', '))
+  fields['Job Type Names'] = jobTypeNames.join(', ')
   jobTypeNames.forEach((name, idx) => {
-    params.set(`Job Type Names ${idx + 1}`, toStr(name))
+    fields[`Job Type Names ${idx + 1}`] = toStr(name)
   })
 
-  params.set('Service Addons', serviceAddons.join(', '))
+  fields['Service Addons'] = serviceAddons.join(', ')
   serviceAddons.forEach((name, idx) => {
-    params.set(`Service Addons ${idx + 1}`, toStr(name))
+    fields[`Service Addons ${idx + 1}`] = toStr(name)
   })
 
   // Keep machine-friendly originals for downstream compatibility.
-  params.set('workshop', toStr(payload.workshop))
-  params.set('name', toStr(payload.name))
-  params.set('phone', toStr(payload.phone))
-  params.set('email', toStr(payload.email))
-  params.set('state', toStr(payload.state))
-  params.set('registration_number', toStr(payload.registration_number))
-  params.set('make', toStr(payload.make))
-  params.set('model', toStr(payload.model))
-  params.set('year', toStr(payload.year))
-  params.set('drop_off_time', toStr(payload.drop_off_time))
-  params.set('job_type_names', jobTypeNames.join(', '))
-  params.set('note', toStr(payload.note))
-  params.set('booking_note', toStr(payload.booking_note))
-  params.set('alert', toStr(payload.alert))
-  params.set('service_addons', serviceAddons.join(', '))
-  params.set('is_flexible', toStr(payload.is_flexible))
+  fields.workshop = toStr(payload.workshop)
+  fields.name = toStr(payload.name)
+  fields.phone = toStr(payload.phone)
+  fields.email = toStr(payload.email)
+  fields.state = toStr(payload.state)
+  fields.registration_number = toStr(payload.registration_number)
+  fields.make = toStr(payload.make)
+  fields.model = toStr(payload.model)
+  fields.year = toStr(payload.year)
+  fields.drop_off_time = toStr(payload.drop_off_time)
+  fields.job_type_names = jobTypeNames.join(', ')
+  fields.note = toStr(payload.note)
+  fields.booking_note = toStr(payload.booking_note)
+  fields.alert = toStr(payload.alert)
+  fields.service_addons = serviceAddons.join(', ')
+  fields.is_flexible = toStr(payload.is_flexible)
 
-  return params
+  return fields
 }
 
 router.post('/send-webhook', async (req, res) => {
   const webhookUrl = (process.env.WEBHOOK_URL || process.env.ZAPIER_WEBHOOK_URL || '').trim()
-  const webhookMethod = (process.env.WEBHOOK_METHOD || 'GET').trim().toUpperCase()
+  const webhookMethod = (process.env.WEBHOOK_METHOD || 'POST').trim().toUpperCase()
 
   if (!webhookUrl) {
     return res.status(200).json({ skipped: true, message: 'No webhook configured' })
   }
 
   try {
-    const params = buildWebhookParams(req.body || {})
+    const fields = buildWebhookFields(req.body || {})
+    const params = new URLSearchParams(fields)
+    const isGetMethod = webhookMethod === 'GET'
     const separator = webhookUrl.includes('?') ? '&' : '?'
-    const urlWithQuery = `${webhookUrl}${separator}${params.toString()}`
+    const targetUrl = isGetMethod ? `${webhookUrl}${separator}${params.toString()}` : webhookUrl
 
     const fetchOptions = { method: webhookMethod }
 
-    if (webhookMethod !== 'GET') {
+    if (!isGetMethod) {
       fetchOptions.headers = { 'Content-Type': 'application/json' }
-      // Keep JSON body for webhook providers that require POST body.
-      fetchOptions.body = JSON.stringify(req.body || {})
+      // Send flattened fields as top-level JSON keys.
+      fetchOptions.body = JSON.stringify(fields)
     }
 
-    const response = await fetch(urlWithQuery, fetchOptions)
+    const response = await fetch(targetUrl, fetchOptions)
 
     if (!response.ok) {
       console.warn('Webhook failed:', response.status, response.statusText)
@@ -90,7 +92,12 @@ router.post('/send-webhook', async (req, res) => {
     }
 
     const data = await response.json().catch(() => ({ status: 'success' }))
-    return res.status(200).json({ ...data, sentAs: webhookMethod, querystring: params.toString() })
+    return res.status(200).json({
+      ...data,
+      sentAs: webhookMethod,
+      sentAsQuerystring: isGetMethod,
+      sentFieldCount: Object.keys(fields).length,
+    })
   } catch (error) {
     console.error('Webhook error:', error)
     return res.status(500).json({ error: 'Webhook request failed' })
