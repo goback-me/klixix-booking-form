@@ -9,6 +9,24 @@ import Step5Summary from './steps/Step5Summary'
 
 const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step4AddExtra, Step5Summary]
 
+/**
+ * @typedef {{ message: string, fields?: string[] }} ValidationError
+ * @typedef {{
+ *   step: number,
+ *   onNext: () => void,
+ *   onPrev: () => void,
+ *   onAutoAdvance: (key: string, value: unknown) => void,
+ *   onReset: () => void,
+ *   onSubmit: () => void,
+ *   submitting: boolean,
+ *   submitError: string,
+ *   validationError: ValidationError | null,
+ *   bookingData: unknown,
+ *   updateBookingData: (key: string, value: unknown) => void,
+ * }} StepContentProps
+ */
+
+/** @param {StepContentProps} props */
 export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onReset, onSubmit, submitting, submitError, validationError, bookingData, updateBookingData }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1

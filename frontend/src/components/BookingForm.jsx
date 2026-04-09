@@ -3,8 +3,38 @@ import Sidebar from './Sidebar'
 import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId } from '../constants/addons'
 
-const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
+/**
+ * @typedef {{ workshopId: string, name?: string }} Workshop
+ * @typedef {{ name: string }} Service
+ * @typedef {{
+ *   fullName: string,
+ *   email: string,
+ *   phone: string,
+ *   make: string,
+ *   model: string,
+ *   year: string,
+ *   registration: string,
+ *   state: string,
+ *   additionalInfo: string,
+ * }} CarDetails
+ * @typedef {{
+ *   workshop: Workshop | null,
+ *   service: Service | null,
+ *   date: string,
+ *   time: string,
+ *   isFlexible: boolean,
+ *   carDetails: CarDetails,
+ *   extras: number[],
+ * }} BookingData
+ * @typedef {{ message: string, fields?: string[] }} ValidationError
+ */
 
+const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
+
+/**
+ * @param {string} dateStr
+ * @param {string} timeStr
+ */
 function formatDropOffTime(dateStr, timeStr) {
   if (!dateStr || !timeStr) return ''
   const [year, month, day] = dateStr.split('-')
@@ -18,6 +48,7 @@ function formatDropOffTime(dateStr, timeStr) {
   return `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}`
 }
 
+/** @type {BookingData} */
 const initialBookingData = {
   workshop: null,
   service: null,
@@ -38,6 +69,11 @@ const initialBookingData = {
   extras: [],
 }
 
+/**
+ * @param {number} step
+ * @param {BookingData} bookingData
+ * @returns {ValidationError | null}
+ */
 function validateStep(step, bookingData) {
   switch (step) {
     case 0:
@@ -98,8 +134,12 @@ export default function BookingForm() {
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [validationError, setValidationError] = useState(null)
+  const [validationError, setValidationError] = useState(/** @type {ValidationError | null} */ (null))
 
+  /**
+   * @param {keyof BookingData} key
+   * @param {BookingData[keyof BookingData]} value
+   */
   const updateBookingData = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
@@ -121,6 +161,7 @@ export default function BookingForm() {
     .filter((index) => index >= 0)
 
   const nextStep = () => {
+    /** @type {ValidationError | null} */
     const error = validateStep(currentStep, bookingData)
     if (error) {
       setValidationError(error)
@@ -130,6 +171,10 @@ export default function BookingForm() {
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
+  /**
+   * @param {keyof BookingData} key
+   * @param {BookingData[keyof BookingData]} value
+   */
   const autoAdvanceWithSelection = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
@@ -141,6 +186,7 @@ export default function BookingForm() {
     setCurrentStep((prev) => Math.max(prev - 1, 0))
   }
 
+  /** @param {number} targetStep */
   const goToStepFromSidebar = (targetStep) => {
     if (submitting) return
 
@@ -166,7 +212,9 @@ export default function BookingForm() {
     const { workshop, service, date, time, carDetails, extras } = bookingData
     const addonLookup = getAddonLookupByWorkshopId(workshop?.workshopId)
 
+    /** @type {string[]} */
     const jobTypeNames = []
+    /** @type {string[]} */
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     extras.forEach((id) => {
@@ -224,7 +272,7 @@ export default function BookingForm() {
 
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
     } catch (error) {
-      setSubmitError(error.message || 'Something went wrong')
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
       setSubmitting(false)
     }
@@ -236,7 +284,7 @@ export default function BookingForm() {
         steps={progressSteps}
         currentStep={sidebarCurrentStep}
         allCompleted={sidebarAllCompleted}
-        completedStepIndexes={completedStepIndexes}
+        completedStepIndexes={/** @type {any} */ (completedStepIndexes)}
         onStepClick={goToStepFromSidebar}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -244,14 +292,14 @@ export default function BookingForm() {
           step={currentStep}
           onNext={nextStep}
           onPrev={prevStep}
-          onAutoAdvance={autoAdvanceWithSelection}
+          onAutoAdvance={/** @type {(key: string, value: unknown) => void} */ (autoAdvanceWithSelection)}
           onReset={resetSteps}
           onSubmit={submitBooking}
           submitting={submitting}
           submitError={submitError}
           validationError={validationError}
           bookingData={bookingData}
-          updateBookingData={updateBookingData}
+          updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}
         />
       </div>
     </div>
