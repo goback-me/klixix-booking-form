@@ -15,6 +15,8 @@ function buildWebhookFields(payload) {
 
   // Human-readable keys requested for webhook integrations.
   fields.Workshop = toStr(payload.workshop)
+  fields['Page URL'] = toStr(payload.page_url)
+  fields['Parent Page URL'] = toStr(payload.parent_page_url)
   fields.Name = toStr(payload.name)
   fields.Phone = toStr(payload.phone)
   fields.Email = toStr(payload.email)
@@ -42,6 +44,8 @@ function buildWebhookFields(payload) {
 
   // Keep machine-friendly originals for downstream compatibility.
   fields.workshop = toStr(payload.workshop)
+  fields.page_url = toStr(payload.page_url)
+  fields.parent_page_url = toStr(payload.parent_page_url)
   fields.name = toStr(payload.name)
   fields.phone = toStr(payload.phone)
   fields.email = toStr(payload.email)

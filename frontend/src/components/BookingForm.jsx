@@ -232,6 +232,13 @@ export default function BookingForm() {
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
     const enrichedNote = `Vehicle: ${vehicleSummary || 'N/A'} | User Comments: ${userComment} | Service Add-ons: ${addonsSummary}`
 
+    // Get parent_url from query string if present
+    let parentPageUrl = '';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      parentPageUrl = params.get('parent_url') || '';
+    }
+    const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
     const payload = {
       workshop: workshop?.workshopId || '',
       name: carDetails.fullName,
@@ -249,6 +256,8 @@ export default function BookingForm() {
       alert: enrichedNote,
       service_addons: selectedAddonNames,
       is_flexible: bookingData.isFlexible || false,
+      page_url: pageUrl,
+      parent_page_url: parentPageUrl,
     }
 
     try {

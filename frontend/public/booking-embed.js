@@ -77,9 +77,13 @@
       document.head.appendChild(style);
     }
     
+
     iframe = document.createElement('iframe');
     iframe.id = 'carone-booking-frame';
-    iframe.src = FORM_URL;
+    // Pass parent page URL as query param
+    var parentUrl = encodeURIComponent(window.location.href);
+    var sep = FORM_URL.includes('?') ? '&' : '?';
+    iframe.src = FORM_URL + sep + 'parent_url=' + parentUrl;
     iframe.title = 'Book a service';
     iframe.allow = 'payment';
     iframe.setAttribute('loading', 'lazy');
