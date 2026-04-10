@@ -59,12 +59,24 @@ export default function ServiceCard({
             style={{ borderColor: selected ? 'var(--color-primary)' : '#e5e7eb' }}
         >
             {(serviceImage || isCompact) && (
-                <div className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}>
+                <div
+                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}
+                  style={isWorkshop ? { maxHeight: '260px', minHeight: '120px' } : {}}
+                >
                     {serviceImage ? (
                         <img
                             src={serviceImage}
                             alt={serviceName}
-                            className={isCompact ? 'w-16 h-16 sm:w-28 sm:h-28 object-contain' : isService ? 'w-full h-full object-cover object-center rounded-lg' : 'w-full h-full object-cover rounded-lg'}
+                            className={
+                              isCompact
+                                ? 'w-16 h-16 sm:w-28 sm:h-28 object-contain'
+                                : isService
+                                  ? 'w-full h-full object-cover object-center rounded-lg'
+                                  : isWorkshop
+                                    ? 'w-full h-full object-cover object-center rounded-lg'
+                                    : 'w-full h-full object-cover rounded-lg'
+                            }
+                            style={isWorkshop ? { aspectRatio: '16/5', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' } : {}}
                             width={imageWidth}
                             height={imageHeight}
                         />

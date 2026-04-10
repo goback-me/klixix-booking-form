@@ -39,7 +39,10 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
             service={service}
             selected={bookingData.workshop?.id === service.id}
             variant="workshop"
-            containerHeight="h-36 sm:h-28 md:h-32 lg:h-40"
+            // Responsive, larger image area, aspect ratio 16:5 for banner look
+            containerHeight="aspect-[16/5] min-h-[120px] sm:min-h-[140px] md:min-h-[180px] lg:min-h-[210px] xl:min-h-[240px]"
+            imageHeight={320}
+            imageWidth={960}
             index={idx}
             onSelect={() => {
               if (onAutoAdvance) {
