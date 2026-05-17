@@ -3,6 +3,15 @@ import { Router } from 'express'
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
 
+function addDaysToYmd(ymd, amount) {
+  const parsed = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!parsed) return null
+
+  const date = new Date(Date.UTC(Number(parsed[1]), Number(parsed[2]) - 1, Number(parsed[3])))
+  date.setUTCDate(date.getUTCDate() + amount)
+  return toYmdInTimezone(date, AU_TIMEZONE)
+}
+
 function toYmdInTimezone(date, timeZone) {
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -91,7 +100,20 @@ router.get('/unavailable-days', async (req, res) => {
       .filter(Boolean)
 
     const todayInAu = toYmdInTimezone(new Date(), AU_TIMEZONE)
-    const unavailableDays = Array.from(new Set([...upstreamDays, todayInAu]))
+    const currentHour = Number.parseInt(
+      new Intl.DateTimeFormat('en-AU', {
+        timeZone: AU_TIMEZONE,
+        hour: '2-digit',
+        hour12: false,
+      }).formatToParts(new Date()).find((part) => part.type === 'hour')?.value || '0',
+      10
+    )
+    const cutoffBlockedDay = currentHour >= 16 ? addDaysToYmd(todayInAu, 1) : null
+    const unavailableDays = Array.from(new Set([
+      ...upstreamDays,
+      todayInAu,
+      ...(cutoffBlockedDay ? [cutoffBlockedDay] : []),
+    ]))
 
     return res.status(200).json({
       workshop: workshopId,
