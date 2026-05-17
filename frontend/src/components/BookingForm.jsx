@@ -1,22 +1,41 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
+import { getAddonLookupByWorkshopId } from '../constants/addons'
 
-const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
+/**
+ * @typedef {{ workshopId: string, name?: string }} Workshop
+ * @typedef {{ name: string }} Service
+ * @typedef {{
+ *   fullName: string,
+ *   email: string,
+ *   phone: string,
+ *   make: string,
+ *   model: string,
+ *   year: string,
+ *   registration: string,
+ *   state: string,
+ *   additionalInfo: string,
+ * }} CarDetails
+ * @typedef {{
+ *   workshop: Workshop | null,
+ *   service: Service | null,
+ *   date: string,
+ *   time: string,
+ *   isFlexible: boolean,
+ *   unavailableDays: string[],
+ *   carDetails: CarDetails,
+ *   extras: number[],
+ * }} BookingData
+ * @typedef {{ message: string, fields?: string[] }} ValidationError
+ */
 
-const extraServicesMap = {
-  1: 'Tyre rotation & balancing',
-  2: 'Engine flush plus',
-  3: 'A/C clean & deodoriser',
-  4: 'Wiper blade replacement',
-  5: 'A/C re-gas & full service',
-  6: 'Tyre puncture repair',
-  7: 'Brake calipers system',
-  8: 'Oil and filter change',
-  9: 'Body and Aesthetics',
-  10: 'Exhaust system servicing',
-}
+const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
 
+/**
+ * @param {string} dateStr
+ * @param {string} timeStr
+ */
 function formatDropOffTime(dateStr, timeStr) {
   if (!dateStr || !timeStr) return ''
   const [year, month, day] = dateStr.split('-')
@@ -30,12 +49,14 @@ function formatDropOffTime(dateStr, timeStr) {
   return `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}`
 }
 
+/** @type {BookingData} */
 const initialBookingData = {
   workshop: null,
   service: null,
   date: '',
   time: '',
   isFlexible: false,
+  unavailableDays: [],
   carDetails: {
     fullName: '',
     email: '',
@@ -44,12 +65,17 @@ const initialBookingData = {
     model: '',
     year: '',
     registration: '',
-    state: '',
+    state: 'QLD',
     additionalInfo: '',
   },
   extras: [],
 }
 
+/**
+ * @param {number} step
+ * @param {BookingData} bookingData
+ * @returns {ValidationError | null}
+ */
 function validateStep(step, bookingData) {
   switch (step) {
     case 0:
@@ -82,7 +108,7 @@ function validateStep(step, bookingData) {
       if (!emailRegex.test(email)) invalid.push('email')
 
       const phoneDigits = phone.replace(/\D/g, '')
-      if (phoneDigits.length < 8 || phoneDigits.length > 15) invalid.push('phone')
+      if (phoneDigits.length < 8 || phoneDigits.length > 12) invalid.push('phone')
 
       const yearRegex = /^\d{4}$/
       const yearNumber = Number.parseInt(year, 10)
@@ -110,8 +136,48 @@ export default function BookingForm() {
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [validationError, setValidationError] = useState(null)
+  const [validationError, setValidationError] = useState(/** @type {ValidationError | null} */ (null))
+  // Store UTM/ad params from iframe URL
+  const [utmParams, setUtmParams] = useState({})
+  // On mount, read UTM/ad params from iframe URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const utmKeys = [
+        'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
+      ];
+      const paramsObj = /** @type {Record<string, string>} */ ({});
+      utmKeys.forEach((key) => {
+        paramsObj[key] = searchParams.get(key) || '';
+      }); 
+      setUtmParams(paramsObj);
+    }
+  }, []);
 
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+  const [prefetchedUnavailableDays, setPrefetchedUnavailableDays] = useState(/** @type {string[] | null} */ (null))
+  const [prefetchDatesLoading, setPrefetchDatesLoading] = useState(false)
+  useEffect(() => {
+    const workshopId = bookingData.workshop?.workshopId
+    if (!workshopId) return
+    let isMounted = true
+    setPrefetchDatesLoading(true)
+    setPrefetchedUnavailableDays(null)
+    const params = new URLSearchParams({ workshop: workshopId, in_days: '180' })
+    fetch(`${apiBaseUrl}/api/unavailable-days?${params.toString()}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((payload) => {
+        if (isMounted) setPrefetchedUnavailableDays(Array.isArray(payload.unavailable_days) ? payload.unavailable_days : [])
+      })
+      .catch(() => { if (isMounted) setPrefetchedUnavailableDays([]) })
+      .finally(() => { if (isMounted) setPrefetchDatesLoading(false) })
+    return () => { isMounted = false }
+  }, [bookingData.workshop?.workshopId, apiBaseUrl])
+
+  /**
+   * @param {keyof BookingData} key
+   * @param {BookingData[keyof BookingData]} value
+   */
   const updateBookingData = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
@@ -121,8 +187,19 @@ export default function BookingForm() {
   const progressSteps = steps.slice(0, 5)
   const sidebarCurrentStep = Math.min(currentStep, progressSteps.length - 1)
   const sidebarAllCompleted = currentStep >= progressSteps.length
+  const completedStepIndexes = progressSteps
+    .map((_, index) => {
+      if (index === 4) {
+        // Add-ons is optional; mark as completed once user reaches summary.
+        return currentStep > 4
+      }
+      return validateStep(index, bookingData) === null
+    })
+    .map((isCompleted, index) => (isCompleted ? index : -1))
+    .filter((index) => index >= 0)
 
   const nextStep = () => {
+    /** @type {ValidationError | null} */
     const error = validateStep(currentStep, bookingData)
     if (error) {
       setValidationError(error)
@@ -132,15 +209,35 @@ export default function BookingForm() {
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
+  /**
+   * @param {keyof BookingData} key
+   * @param {BookingData[keyof BookingData]} value
+   */
   const autoAdvanceWithSelection = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+    // Delay auto-advance to Step 2 to allow prefetch to complete
+    const delay = key === 'service' ? 350 : 0
+    setTimeout(() => {
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+    }, delay)
   }
 
   const prevStep = () => {
     setValidationError(null)
     setCurrentStep((prev) => Math.max(prev - 1, 0))
+  }
+
+  /** @param {number} targetStep */
+  const goToStepFromSidebar = (targetStep) => {
+    if (submitting) return
+
+    const isCurrent = targetStep === sidebarCurrentStep
+    const isCompleted = completedStepIndexes.includes(targetStep)
+    if (isCurrent || isCompleted) {
+      setValidationError(null)
+      setCurrentStep(targetStep)
+    }
   }
 
   const resetSteps = () => {
@@ -155,14 +252,17 @@ export default function BookingForm() {
     setSubmitError('')
 
     const { workshop, service, date, time, carDetails, extras } = bookingData
+    const addonLookup = getAddonLookupByWorkshopId(workshop?.workshopId)
 
+    /** @type {string[]} */
     const jobTypeNames = []
+    /** @type {string[]} */
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     extras.forEach((id) => {
-      if (extraServicesMap[id]) {
-        jobTypeNames.push(extraServicesMap[id])
-        selectedAddonNames.push(extraServicesMap[id])
+      if (addonLookup[id]?.name) {
+        jobTypeNames.push(addonLookup[id].name)
+        selectedAddonNames.push(addonLookup[id].name)
       }
     })
 
@@ -172,8 +272,16 @@ export default function BookingForm() {
       .join(' ')
     const userComment = carDetails.additionalInfo?.trim() || 'N/A'
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
-    const enrichedNote = `Vehicle: ${vehicleSummary || 'N/A'} | User Comments: ${userComment} | Service Add-ons: ${addonsSummary}`
+const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}`
 
+    // Get parent_url from query string if present
+    let parentPageUrl = '';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      parentPageUrl = params.get('parent_url') || '';
+    }
+    const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+    // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
       name: carDetails.fullName,
@@ -191,6 +299,9 @@ export default function BookingForm() {
       alert: enrichedNote,
       service_addons: selectedAddonNames,
       is_flexible: bookingData.isFlexible || false,
+      page_url: pageUrl,
+      parent_page_url: parentPageUrl,
+      ...utmParams,
     }
 
     try {
@@ -214,7 +325,7 @@ export default function BookingForm() {
 
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
     } catch (error) {
-      setSubmitError(error.message || 'Something went wrong')
+      setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
       setSubmitting(false)
     }
@@ -222,20 +333,28 @@ export default function BookingForm() {
 
   return (
     <div className="flex flex-col lg:flex-row bg-white w-full h-full min-w-0 overflow-hidden">
-      <Sidebar steps={progressSteps} currentStep={sidebarCurrentStep} allCompleted={sidebarAllCompleted} />
+      <Sidebar
+        steps={progressSteps}
+        currentStep={sidebarCurrentStep}
+        allCompleted={sidebarAllCompleted}
+        completedStepIndexes={/** @type {any} */ (completedStepIndexes)}
+        onStepClick={goToStepFromSidebar}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <StepContent
           step={currentStep}
           onNext={nextStep}
           onPrev={prevStep}
-          onAutoAdvance={autoAdvanceWithSelection}
+          onAutoAdvance={/** @type {(key: string, value: unknown) => void} */ (autoAdvanceWithSelection)}
           onReset={resetSteps}
           onSubmit={submitBooking}
           submitting={submitting}
           submitError={submitError}
           validationError={validationError}
           bookingData={bookingData}
-          updateBookingData={updateBookingData}
+          updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}
+          prefetchedUnavailableDays={prefetchedUnavailableDays}
+          prefetchDatesLoading={prefetchDatesLoading}
         />
       </div>
     </div>

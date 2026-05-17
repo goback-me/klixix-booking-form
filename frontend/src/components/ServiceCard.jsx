@@ -1,6 +1,18 @@
 import { motion } from 'motion/react'
 import { MapPin, Clock, Phone } from 'lucide-react'
 
+/**
+ * @param {{
+ *   service: any,
+ *   selected?: boolean,
+ *   onSelect?: () => void,
+ *   imageWidth?: number,
+ *   imageHeight?: number,
+ *   containerHeight?: string,
+ *   variant?: string,
+ *   index?: number,
+ * }} props
+ */
 export default function ServiceCard({
     service,
     selected,
@@ -10,6 +22,7 @@ export default function ServiceCard({
     containerHeight = 'aspect-[4/3]',
     variant = 'default',
     index = 0,
+    imagePosition = 'top',
 }) {
     // Handle both string and object formats
     const serviceName = typeof service === 'string' ? service : service?.name
@@ -47,48 +60,66 @@ export default function ServiceCard({
             style={{ borderColor: selected ? 'var(--color-primary)' : '#e5e7eb' }}
         >
             {(serviceImage || isCompact) && (
-                <div className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}>
+                <div
+                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}
+                  style={isWorkshop ? { maxHeight: '260px', minHeight: '120px' } : {}}
+                >
                     {serviceImage ? (
                         <img
                             src={serviceImage}
                             alt={serviceName}
-                            className={isCompact ? 'w-14 h-14 object-contain' : isService ? 'w-full h-full object-cover object-center rounded-lg' : 'w-full h-full object-cover rounded-lg'}
+                            className={
+                              isCompact
+                                ? 'w-16 h-16 sm:w-28 sm:h-28 object-contain'
+                                : isService
+                                  ? 'w-full h-full object-cover object-center rounded-lg'
+                                  : isWorkshop
+                                    ? 'w-full h-full object-cover object-center rounded-lg'
+                                    : 'w-full h-full object-cover rounded-lg'
+                            }
+                            style={isWorkshop ? { aspectRatio: '16/5', width: '100%', height: '100%', objectFit: 'cover', objectPosition: imagePosition === 'center' ? 'center' : 'top' } : {}}
                             width={imageWidth}
                             height={imageHeight}
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
                             <span className="h-11 w-11 rounded-full bg-slate-200 text-slate-700 font-semibold text-sm flex items-center justify-center">
-                                {serviceInitials || (serviceName ? serviceName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase() : 'SR')}
+                                {serviceInitials || (serviceName ? serviceName.split(' ').map((/** @type {string} */ part) => part[0]).join('').slice(0, 2).toUpperCase() : 'SR')}
                             </span>
                         </div>
                     )}
                 </div>
             )}
-                        <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-3 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
+                                                <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2.5 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
-                        <span className="text-[rgba(255,77,36,1)] font-semibold text-sm sm:text-lg leading-none">{servicePrice}</span>
+                        <span className={`text-[rgba(255,77,36,1)] font-semibold ${isCompact ? 'text-[18px] sm:text-[18px]' : 'text-sm sm:text-lg'} leading-none`}>{servicePrice}</span>
                     )}
-                                        <h3 className={`${isCompact ? 'text-sm leading-5' : isWorkshop ? 'text-[20px] sm:text-[22px] md:text-[24px] leading-[1.15] tracking-[-0.01em]' : 'text-[18px] sm:text-[20px] md:text-[18px] leading-[1.18] tracking-[-0.01em]'} font-medium break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
+                                                                                <h3 className={`${isCompact ? 'text-[18px] sm:text-[18px] leading-[1.2]' : isWorkshop ? 'text-[16px] sm:text-[22px] md:text-[24px] leading-[1.15] tracking-[-0.01em]' : 'text-[18px] sm:text-[20px] md:text-[18px] leading-[1.18] tracking-[-0.01em]'} font-medium break-words`} style={{ fontFamily: 'var(--font-display)', color: 'var(--color-primary-dark)' }}>
                         {serviceName}
                     </h3>
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
-                                {!isCompact && serviceAddress && (
-                                    <p className={`flex items-start gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35] line-clamp-1 mt-1.5' : 'text-xs sm:text-sm line-clamp-2'} mb-1.5 break-words text-gray-600`}>
+                                                                {!isCompact && serviceAddress && (
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-sm leading-[1.3] line-clamp-1 mt-1 font-display' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2'} mb-1 break-words text-gray-600`}
+                                                                    >
                     <MapPin size={14} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
                     {serviceAddress}
                   </p>
                 )}
                 {!isCompact && serviceTime && (
-                                    <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35]' : 'text-xs sm:text-sm'} mb-1.5 text-gray-600`}>
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-sm leading-[1.3] font-display' : 'flex items-center gap-1.5 text-xs sm:text-sm'} mb-1 text-gray-600`}
+                                                                    >
                     <Clock size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
                   </p>
                 )}
                 {!isCompact && servicePhone && (
-                                    <p className={`flex items-center gap-1.5 ${isWorkshop ? 'text-sm leading-[1.35]' : 'text-xs sm:text-sm'} font-medium text-gray-600`}>
+                                                                    <p
+                                                                        className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-sm leading-[1.3]' : 'flex items-center gap-1.5 text-xs sm:text-sm'} font-medium text-gray-600`}
+                                                                    >
                     <Phone size={14} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {servicePhone}
                   </p>

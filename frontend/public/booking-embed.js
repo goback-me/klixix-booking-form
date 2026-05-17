@@ -1,9 +1,33 @@
 (function () {
   'use strict';
 
-  // var FORM_URL = 'https://embed.car-one.com.au';
-  var FORM_URL = 'http://localhost:5173';
-  var overlay, iframe, isOpen = false;
+  var DEFAULT_FORM_URL = 'https://embed.car-one.com.au';
+  var configuredUrl = String((/** @type {any} */ (window)).CARONE_BOOKING_URL || '').trim();
+  var FORM_URL = (configuredUrl || DEFAULT_FORM_URL).replace(/\/$/, '');
+  var FORM_ORIGIN = (function () {
+    try {
+      return new URL(FORM_URL).origin;
+    } catch (error) {
+      return '';
+    }
+  })();
+
+  /** @type {HTMLDivElement | null} */
+  var overlay = null;
+  /** @type {HTMLIFrameElement | null} */
+  var iframe = null;
+  var isOpen = false;
+  var previousBodyOverflow = '';
+
+  function getIframeOrigin() {
+    if (!iframe || !iframe.src) return FORM_ORIGIN;
+
+    try {
+      return new URL(iframe.src).origin;
+    } catch (error) {
+      return FORM_ORIGIN;
+    }
+  }
 
   function createOverlay() {
     if (overlay) return;
@@ -11,8 +35,12 @@
     overlay = document.createElement('div');
     overlay.id = 'carone-booking-overlay';
 
-    var style = document.createElement('style');
-    style.textContent = [
+    var styleId = 'carone-booking-overlay-style';
+    var style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = [
       '#carone-booking-overlay {',
       '  display: none;',
       '  position: fixed;',
@@ -55,13 +83,31 @@
       '    max-height: 95vh;',
       '  }',
       '}',
-    ].join('\n');
-
-    document.head.appendChild(style);
+      ].join('\n');
+      document.head.appendChild(style);
+    }
     
+
     iframe = document.createElement('iframe');
     iframe.id = 'carone-booking-frame';
-    iframe.src = FORM_URL;
+    // Pass parent page URL and UTM/query params as query params
+    var parentUrl = encodeURIComponent(window.location.href);
+    var sep = FORM_URL.includes('?') ? '&' : '?';
+
+    // List of UTM and ad-related params to catch
+    var utmParams = [
+      'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
+    ];
+    var searchParams = new URLSearchParams(window.location.search);
+    var utmString = utmParams
+      .map(function(key) {
+        var val = searchParams.get(key);
+        return key + '=' + encodeURIComponent(val || '');
+      })
+      .join('&');
+
+    var extraParams = 'parent_url=' + parentUrl + (utmString ? ('&' + utmString) : '');
+    iframe.src = FORM_URL + sep + extraParams;
     iframe.title = 'Book a service';
     iframe.allow = 'payment';
     iframe.setAttribute('loading', 'lazy');
@@ -81,14 +127,21 @@
 
     // Listen for close message from iframe
     window.addEventListener('message', function (e) {
-      if (e.origin !== FORM_URL.replace(/\/$/, '')) return;
-      if (e.data === 'carone-booking-close') closeBooking();
+      if (!iframe || e.source !== iframe.contentWindow) return;
+      var expectedOrigin = getIframeOrigin();
+      if (expectedOrigin && e.origin !== expectedOrigin) return;
+
+      if (e.data === 'carone-booking-close' || (e.data && e.data.type === 'carone-booking-close')) {
+        closeBooking();
+      }
     });
   }
 
   function openBooking() {
     createOverlay();
+    if (!overlay) return;
     overlay.classList.add('open');
+    previousBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     isOpen = true;
   }
@@ -96,19 +149,21 @@
   function closeBooking() {
     if (!overlay) return;
     overlay.classList.remove('open');
-    document.body.style.overflow = '';
+    document.body.style.overflow = previousBodyOverflow;
     isOpen = false;
   }
 
   // Expose globally
-  window.openBooking = openBooking;
-  window.closeBooking = closeBooking;
+  var globalWindow = /** @type {any} */ (window);
+  globalWindow.openBooking = openBooking;
+  globalWindow.closeBooking = closeBooking;
 
   // Auto-bind buttons with data-action="open-booking"
   function bindButtons() {
-    document.querySelectorAll('[data-action="open-booking"]').forEach(function (btn) {
-      if (btn._caronebound) return;
-      btn._caronebound = true;
+    document.querySelectorAll('[data-action="open-booking"]').forEach(function (el) {
+      var btn = /** @type {HTMLElement} */ (el);
+      if (btn.dataset.caroneBound === '1') return;
+      btn.dataset.caroneBound = '1';
       btn.style.cursor = 'pointer';
       btn.addEventListener('click', function (e) {
         e.preventDefault();
