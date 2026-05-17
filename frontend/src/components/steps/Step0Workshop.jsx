@@ -1,6 +1,23 @@
+
 import ServiceCard from '../ServiceCard'
 
+async function fetchUnavailableDays(workshopId, apiBaseUrl) {
+  try {
+    const params = new URLSearchParams({
+      workshop: workshopId,
+      in_days: '180',
+    })
+    const response = await fetch(`${apiBaseUrl}/api/unavailable-days?${params.toString()}`)
+    if (!response.ok) return []
+    const payload = await response.json()
+    return Array.isArray(payload.unavailable_days) ? payload.unavailable_days : []
+  } catch {
+    return []
+  }
+}
+
 export default function Step0Workshop({ bookingData, updateBookingData, onAutoAdvance }) {
+  const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
   const services = [
     {
@@ -38,18 +55,24 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
             variant="workshop"
             containerHeight="aspect-[16/6]"
             index={idx}
-            onSelect={() => {
-              if (onAutoAdvance) {
-                onAutoAdvance('workshop', service)
-              } else {
-                updateBookingData('workshop', service)
-              }
+            onSelect={async () => {
               if (typeof window !== 'undefined') {
                 window.localStorage.setItem('selectedWorkshop', service.workshopId)
               }
+              // Fetch unavailable days for selected workshop in background
+              const unavailableDays = await fetchUnavailableDays(service.workshopId, apiBaseUrl)
+              if (onAutoAdvance) {
+                onAutoAdvance('workshop', service)
+                updateBookingData('unavailableDays', unavailableDays)
+              } else {
+                updateBookingData('workshop', service)
+                updateBookingData('unavailableDays', unavailableDays)
+              }
             }}
           />
-        ))}        </div>      </div>
+        ))}
+        </div>
+      </div>
     </div>
   )
 }

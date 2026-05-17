@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
 
@@ -36,6 +36,7 @@ const initialBookingData = {
   date: '',
   time: '',
   isFlexible: false,
+  unavailableDays: null,
   carDetails: {
     fullName: '',
     email: '',
@@ -112,10 +113,57 @@ export default function BookingForm() {
   const [submitError, setSubmitError] = useState('')
   const [validationError, setValidationError] = useState(null)
 
+  const workshops = [
+    {
+      id: 1,
+      workshopId: 'hendra',
+      name: 'Hendra workshop',
+      address: '238 Nudgee Rd, Hendra QLD 4011, Australia',
+      time: 'Open today until 5:00pm',
+      phone: '0736070215',
+      image: './hendra-workshop.webp',
+    },
+    {
+      id: 2,
+      workshopId: 'woolloongabba',
+      name: 'Woolloongabba workshop',
+      address: '187 Logan Rd, Woolloongabba QLD 4102, Australia',
+      time: 'Open today until 5:00pm',
+      phone: '0736070215',
+      image: './woolloongabba-workshop.webp',
+    },
+  ]
+
   const updateBookingData = (key, value) => {
     setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
   }
+
+  // Auto-select workshop based on location query parameter
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const location = params.get('location')?.toLowerCase()
+      
+      if (location) {
+        const selectedWorkshop = workshops.find((w) => w.workshopId === location)
+        if (selectedWorkshop) {
+          setBookingData((prev) => ({ ...prev, workshop: selectedWorkshop }))
+          setCurrentStep(1) // Skip to service selection
+          
+          // Fetch unavailable days for the workshop in background
+          const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+          fetch(`${apiBaseUrl}/api/unavailable-days?workshop=${selectedWorkshop.workshopId}&in_days=180`)
+            .then((res) => res.ok ? res.json() : { unavailable_days: [] })
+            .then((data) => {
+              const unavailableDays = Array.isArray(data.unavailable_days) ? data.unavailable_days : []
+              setBookingData((prev) => ({ ...prev, unavailableDays }))
+            })
+            .catch(() => {})
+        }
+      }
+    }
+  }, [])
 
   const steps = ['Workshop', 'Service', 'Date & time', 'Car details', 'Add-ons', 'Summary']
   const progressSteps = steps.slice(0, 5)
