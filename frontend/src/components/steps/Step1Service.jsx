@@ -72,7 +72,7 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
                       updateBookingData('service', service)
                     }
                   }}
-                    containerHeight="h-[4.75rem] sm:h-[7rem] md:h-[7rem] lg:h-[7rem]"
+                    containerHeight="aspect-[16/5] min-h-[110px] sm:min-h-[130px] md:min-h-[150px] lg:min-h-[160px]"
                     index={idx}
                 />
               ))}

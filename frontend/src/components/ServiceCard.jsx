@@ -61,8 +61,8 @@ export default function ServiceCard({
         >
             {(serviceImage || isCompact) && (
                 <div
-                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : `bg-gray-200 rounded-lg ${containerHeight}`} flex-shrink-0`}
-                  style={isWorkshop ? { maxHeight: '260px', minHeight: '120px' } : {}}
+                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : isWorkshop ? 'rounded-lg flex-shrink-0 bg-white h-[220px] sm:h-[240px] md:h-[260px]' : `bg-gray-200 rounded-lg ${containerHeight}`} `}
+                  style={isWorkshop ? { width: '100%' } : {}}
                 >
                     {serviceImage ? (
                         <img
@@ -74,10 +74,10 @@ export default function ServiceCard({
                                 : isService
                                   ? 'w-full h-full object-cover object-center rounded-lg'
                                   : isWorkshop
-                                    ? 'w-full h-full object-cover object-center rounded-lg'
+                                                                        ? 'w-full h-full object-cover object-center rounded-lg'
                                     : 'w-full h-full object-cover rounded-lg'
                             }
-                            style={isWorkshop ? { aspectRatio: '16/5', width: '100%', height: '100%', objectFit: 'cover', objectPosition: imagePosition === 'center' ? 'center' : 'top' } : {}}
+                                                        style={isWorkshop ? { width: '100%', height: '100%', display: 'block' } : {}}
                             width={imageWidth}
                             height={imageHeight}
                         />
