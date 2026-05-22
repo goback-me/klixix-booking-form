@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
+import BreadcrumbBar from '../BreadcrumbBar'
 
 const AU_TIMEZONE = 'Australia/Brisbane'
 const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -211,9 +212,9 @@ function SlotButton({ slot, selected, onClick }) {
 }
 
 /**
- * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, prefetchedUnavailableDays?: string[] | null, prefetchDatesLoading?: boolean }} props
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, prefetchedUnavailableDays?: string[] | null, prefetchDatesLoading?: boolean, onGoToStep?: (step: number) => void }} props
  */
-export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchDatesLoading = false }) {
+export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchDatesLoading = false, onGoToStep }) {
   const [currentTime, setCurrentTime] = useState(() => new Date())
   const nowInAu = useMemo(() => getAustralianDateParts(currentTime), [currentTime])
   const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
@@ -506,7 +507,8 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
             <span className="text-xs sm:text-sm text-gray-800">I'm flexible</span>
           </button>
         </div>
-        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-6">Select your preferred appointment slot.</p>
+        <p className="text-xs sm:text-sm text-gray-600 mb-0">Select your preferred appointment slot.</p>
+        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
 
         {/* Mobile: Compact 5-date picker */}
         <div className="lg:hidden bg-gray-50 rounded-2xl p-2.5 sm:p-4 md:p-5 border border-gray-100 relative">
@@ -650,7 +652,7 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
 
         <div className="lg:hidden space-y-2.5 sm:space-y-4">
             <div className="bg-gray-50 rounded-2xl p-2.5 sm:p-4 border border-gray-100">
-              <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Morning available times</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2 sm:mb-3">Morning available times</h3>
               <div className="grid grid-cols-3 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-3">
                 {morningSlots.map((slot) => (
                   <SlotButton
@@ -664,7 +666,7 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
             </div>
 
             <div className="bg-gray-50 rounded-2xl p-2.5 sm:p-4 border border-gray-100">
-              <h3 className="text-sm sm:text-lg font-medium text-gray-900 mb-2 sm:mb-3">Afternoon available times</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2 sm:mb-3">Afternoon available times</h3>
               <div className="grid grid-cols-3 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 sm:gap-3">
                 {afternoonSlots.map((slot) => (
                   <SlotButton
@@ -751,7 +753,7 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
           {/* Right: Time slots */}
           <div className="col-span-2 space-y-3">
             <div>
-              <h3 className="text-xs font-semibold text-gray-900 mb-2">Morning available times</h3>
+              <h3 className="text-md font-medium text-gray-900 mb-2">Morning available times</h3>
               <div className="grid grid-cols-4 gap-2">
                 {morningSlots.map((slot) => (
                   <SlotButton
@@ -765,7 +767,7 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
             </div>
 
             <div>
-              <h3 className="text-xs font-semibold text-gray-900 mb-2">Afternoon available times</h3>
+              <h3 className="text-md font-medium text-gray-900 mb-2">Afternoon available times</h3>
               <div className="grid grid-cols-4 gap-2">
                 {afternoonSlots.map((slot) => (
                   <SlotButton

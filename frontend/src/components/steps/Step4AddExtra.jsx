@@ -1,11 +1,12 @@
 import { useEffect } from 'preact/hooks'
 import ServiceCard from '../ServiceCard'
 import { getAddonsByWorkshopId } from '../../constants/addons'
+import BreadcrumbBar from '../BreadcrumbBar'
 
 /**
- * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void }} props
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, onGoToStep?: (step: number) => void }} props
  */
-export default function Step4AddExtra({ bookingData, updateBookingData }) {
+export default function Step4AddExtra({ bookingData, updateBookingData, onGoToStep }) {
   const workshopId = bookingData?.workshop?.workshopId
   const isWoolloongabba = workshopId === 'woolloongabba'
   const services = getAddonsByWorkshopId(workshopId)
@@ -35,23 +36,29 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
   const renderGabbaPrice = (service) => {
     if (service.splitPrice) {
       return (
-        <p className="text-[18px] sm:text-[18px] leading-none font-semibold text-[rgba(255,77,36,1)]" style={{ fontFamily: 'var(--font-display)' }}>
+        <div className="flex items-center gap-1 font-semibold text-[rgba(255,77,36,1)]" style={{ fontFamily: 'var(--font-display)' }}>
           {service.splitPrice.map((/** @type {{ value: string, suffix: string }} */ part, /** @type {number} */ idx) => (
-            <span key={part.suffix} className="inline-flex items-baseline mr-2 last:mr-0">
-              <span className="text-[18px] sm:text-[18px]">{part.value}</span>
-              <span className="text-[18px] sm:text-[18px] ml-1">{part.suffix}</span>
-              {idx < service.splitPrice.length - 1 ? <span className="mx-2"> </span> : null}
+            <span key={part.suffix} className="inline-flex items-baseline">
+              <span className="text-sm mr-0.5">$</span>
+              <span className="text-xl font-bold">{part.value.replace('$', '')}</span>
+              <span className="text-xs font-normal text-gray-500 ml-1">{part.suffix}</span>
+              {idx < service.splitPrice.length - 1 ? <span className="text-sm mx-1">/</span> : null}
             </span>
           ))}
-        </p>
+        </div>
       )
     }
 
+    if (!service.priceLabel) return null
+
+    const numPart = service.priceLabel.replace('$', '').trim()
+
     return (
-      <p className="text-[18px] sm:text-[18px] leading-none font-semibold text-[rgba(255,77,36,1)]" style={{ fontFamily: 'var(--font-display)' }}>
-        {service.priceLabel}
-        {service.priceSuffix ? <span className="text-[18px] sm:text-[18px] ml-1">{service.priceSuffix}</span> : null}
-      </p>
+      <div className="flex items-baseline gap-0.5 font-semibold text-[rgba(255,77,36,1)]" style={{ fontFamily: 'var(--font-display)' }}>
+        <span className="text-sm">$</span>
+        <span className="text-xl font-bold">{numPart}</span>
+        {service.priceSuffix ? <span className="text-xs font-normal text-gray-500 ml-1">{service.priceSuffix}</span> : null}
+      </div>
     )
   }
 
@@ -62,13 +69,14 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
     <div className="p-2.5 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <h2 className="text-[2rem] sm:text-2xl md:text-3xl leading-[1.08] text-gray-900 mb-1 break-words">Do you need anything else?</h2>
-        <p className="text-sm sm:text-base text-gray-600 mb-2 sm:mb-4 break-words">
+        <p className="text-sm sm:text-base text-gray-600 mb-0 break-words">
           {isWoolloongabba ? 'Experience premium automotive care with our expert technicians' : 'All prices are Exclusive of GST.'}
         </p>
+        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
 
         {isWoolloongabba ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
               {gabbaGridServices.map((service) => {
                 const isSelected = selectedExtras.includes(service.id)
                 return (
@@ -76,25 +84,37 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
                     key={service.id}
                     type="button"
                     onClick={() => toggleService(service.id)}
-                    className={`rounded-2xl border p-2.5 sm:p-3 text-center transition-all duration-200 ${
+                    className={`rounded-2xl border p-3 sm:p-4 text-left transition-all duration-200 relative ${
                       isSelected
                         ? 'border-[rgba(255,77,36,1)] ring-2 ring-[rgba(255,77,36,1)] bg-white'
-                        : 'border-gray-200 bg-gray-50 hover:border-[rgba(255,77,36,1)]'
+                        : 'border-gray-200 bg-white hover:border-[rgba(255,77,36,1)]'
                     }`}
                   >
-                    <div className="h-16 sm:h-24 flex items-center justify-center mb-2 sm:mb-3">
-                      <img
-                        src={service.image}
-                        alt={service.name}
-                        className="max-h-full max-w-[80%] object-contain"
-                        width={150}
-                        height={84}
-                      />
+                    {service.badge && (
+                      <span className="absolute top-2 right-2 inline-flex items-center justify-center rounded-[20px] bg-[#FFF4EB] text-[#FF4D24] text-xs px-2 py-0.5" style={{ border: '0.6px solid #FF4D24' }}>
+                        {service.badge}
+                      </span>
+                    )}
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0">
+                        <img
+                          src={service.image}
+                          alt={service.name}
+                          className="max-h-full max-w-full object-contain"
+                          width={80}
+                          height={80}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <div className="mb-0.5">{renderGabbaPrice(service)}</div>
+                        <h3 className="text-sm sm:text-base leading-tight text-gray-900 font-semibold" style={{ fontFamily: 'var(--font-display)' }}>
+                          {service.name}
+                        </h3>
+                        {service.description && (
+                          <p className="text-xs text-gray-500 mt-0.5 leading-snug">{service.description}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="leading-tight mb-1">{renderGabbaPrice(service)}</div>
-                    <h3 className="text-[18px] sm:text-[18px] leading-tight text-gray-900" style={{ fontFamily: 'var(--font-display)' }}>
-                      {service.name}
-                    </h3>
                   </button>
                 )
               })}
@@ -130,7 +150,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData }) {
                     <p className="text-xs sm:text-base leading-snug text-gray-700 break-words">{gabbaFeatured.description}</p>
                   </div>
                   {gabbaFeatured.badge && (
-                    <span className="inline-flex items-center self-start rounded-full border border-[rgba(255,77,36,1)] text-[rgba(255,77,36,1)] text-xs px-2.5 py-1 sm:ml-auto">
+                    <span className="inline-flex items-center justify-center self-start rounded-[20px] bg-[#FFF4EB] text-[#FF4D24] text-xs px-2 py-0.5 sm:ml-auto" style={{ border: '0.6px solid #FF4D24' }}>
                       {gabbaFeatured.badge}
                     </span>
                   )}

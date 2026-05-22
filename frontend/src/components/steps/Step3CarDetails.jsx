@@ -1,9 +1,10 @@
 import { useEffect } from 'preact/hooks'
+import BreadcrumbBar from '../BreadcrumbBar'
 
 /**
- * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any }} props
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any, onGoToStep?: (step: number) => void }} props
  */
-export default function Step3CarDetails({ bookingData, updateBookingData, validationError }) {
+export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onGoToStep }) {
   const details = bookingData.carDetails
 
   const auStates = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
@@ -39,7 +40,8 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
     <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
         <h2 className="text-2xl md:text-3xl text-gray-900 mb-1 break-words">Vehicle &amp; contact details</h2>
-        <p className="text-gray-600 mb-4 break-words">Tell us about your vehicle and how to reach you.</p>
+        <p className="text-gray-600 mb-0 break-words">Tell us about your vehicle and how to reach you.</p>
+        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>

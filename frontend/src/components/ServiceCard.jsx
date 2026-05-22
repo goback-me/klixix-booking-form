@@ -88,6 +88,11 @@ export default function ServiceCard({
                             </span>
                         </div>
                     )}
+                    {service?.badge && (
+                        <span className="absolute top-3 right-3 inline-flex items-center justify-center rounded-[20px] bg-[#FFF4EB] text-[#FF4D24] text-xs px-2 py-0.5" style={{ border: '0.6px solid #FF4D24' }}>
+                            {service.badge}
+                        </span>
+                    )}
                 </div>
             )}
                                                 <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2.5 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>

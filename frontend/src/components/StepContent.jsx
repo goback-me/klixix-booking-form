@@ -40,7 +40,7 @@ const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step
  */
 
 /** @param {StepContentProps} props */
-export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onReset, onSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading }) {
+export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -60,9 +60,10 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
   }
 
   const handleBackToHome = () => {
-    onReset()
-    if (typeof window !== 'undefined') {
+    if (window.parent !== window) {
       window.parent.postMessage('carone-booking-close', '*')
+    } else {
+      onReset()
     }
   }
 
@@ -100,6 +101,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
               validationError={validationError}
               onAutoAdvance={onAutoAdvance}
               onPrev={onPrev}
+              onGoToStep={onGoToStep}
               prefetchedUnavailableDays={prefetchedUnavailableDays}
               prefetchDatesLoading={prefetchDatesLoading}
             />
@@ -121,6 +123,7 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
                 validationError={validationError}
                 onAutoAdvance={onAutoAdvance}
                 onPrev={onPrev}
+                onGoToStep={onGoToStep}
               />
             </motion.div>
           </AnimatePresence>
@@ -184,6 +187,41 @@ export default function StepContent({ step, onNext, onPrev, onAutoAdvance, onRes
             >
               Next
             </button>
+          </>
+        ) : isAddonsStep ? (
+          <>
+            <div className="w-full flex items-stretch gap-2 sm:hidden">
+              <button
+                type="button"
+                onClick={() => { updateBookingData('extras', []); onNext() }}
+                className="flex-1 px-3 py-2.5 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 active:scale-[0.98] transition-all duration-200 text-sm"
+              >
+                Skip add-ons
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                className="flex-1 px-3 py-2.5 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md active:scale-[0.98] transition-all duration-200 text-sm"
+              >
+                Confirm
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:items-center sm:gap-3 sm:ml-auto">
+              <button
+                type="button"
+                onClick={() => { updateBookingData('extras', []); onNext() }}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] transition-all duration-200"
+              >
+                Skip add-ons
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                className="px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
+              >
+                Confirm
+              </button>
+            </div>
           </>
         ) : isSubmitStep ? (
           <button
