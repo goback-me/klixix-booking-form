@@ -27,25 +27,15 @@ export const HENDRA_ADDONS = [
 
 /** @type {Addon[]} */
 export const GABBA_ADDONS = [
-  { id: 101, name: 'Tyre rotation and balancing', price: 100, priceLabel: '$100', image: '/tyre-rotation-gabba-balancing.svg', badge: 'Recommended', description: 'Rotate tyres and balance wheels.' },
-  { id: 102, name: 'Engine flush plus', price: 52.8, priceLabel: '$52.80', image: '/Engine flush plus-gabba.svg', description: 'Additive only.' },
-  { id: 103, name: 'A/C clean and deodoriser', price: 38.25, priceLabel: '$38.25', image: '/AC clean & deodoriser-gabba.svg', description: 'Air conditioning clean and deodorise.' },
-  { id: 104, name: 'A/C re-gas and full service', price: 220, priceLabel: '$220', image: '/AC re-gas & full service-gabba.svg', description: 'Full air-conditioning regas service.' },
-  {
-    id: 105,
-    name: 'Tyre puncture repair',
-    price: 100,
-    image: '/Tyre puncture repair.svg',
-    splitPrice: [
-      { value: '$50', suffix: '(Half)' },
-      { value: '$100', suffix: '(Full)' },
-    ],
-    description: 'Temp repair $50. Full repair $100.',
-  },
-  { id: 106, name: 'Wiper blade replacement', price: 30, priceLabel: '$30', priceSuffix: 'each', image: '/Wiper blade replacement.svg', description: 'Charged per blade.' },
-  { id: 107, name: 'AC clean + Cabin filter', price: 138.5, priceLabel: '$138.50', image: '/ac-clean-cabin-fiber-gabba.svg', description: 'AC cleaning with cabin filter replacement.' },
-  { id: 108, name: 'AC Regas', price: 220, priceLabel: '$220', image: '/AC re-gas & full service.svg', description: 'Air-conditioning regas service.' },
-  { id: 109, name: 'No Add-ons', image: '/no-addons.svg', description: 'Continue without optional extras.' },
+  { id: 101, name: 'Tyre rotation & balancing', price: 100, priceLabel: '$100.00', image: '/tyre-rotation-gabba-balancing.svg', badge: 'Recommended' },
+  { id: 102, name: 'Engine flush additive', price: 52.8, priceLabel: '$52.80', image: '/Engine flush plus-gabba.svg' },
+  { id: 103, name: 'A/C clean & deodoriser', price: 38.25, priceLabel: '$38.25', image: '/AC clean & deodoriser-gabba.svg' },
+  { id: 104, name: 'A/C re-gas & full service', price: 220, priceLabel: '$220.00', image: '/AC re-gas & full service-gabba.svg' },
+  { id: 105, name: 'Tyre puncture repair', price: 100, priceLabel: '$50 / $100', image: '/Tyre puncture repair.svg' },
+  { id: 106, name: 'Wiper blade replacement', price: 30, priceLabel: '$30.00 each', image: '/Wiper blade replacement.svg' },
+  { id: 107, name: 'AC clean + Cabin filter', price: 138.5, priceLabel: '$138.50', image: '/ac-clean-cabin-fiber-gabba.svg' },
+  { id: 108, name: 'AC Regas', price: 220, priceLabel: '$220.00', image: '/AC re-gas & full service.svg' },
+  { id: 109, name: 'No Add-ons', image: '/no-addons.svg' },
 ]
 
 /**
