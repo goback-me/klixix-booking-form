@@ -7,6 +7,19 @@ function toStr(value) {
   return String(value)
 }
 
+/** Converts "22/05/2026 08:00" → "22/05/2026 8:00 AM" for webhook display */
+function toAmPmTime(dropOffTime) {
+  if (!dropOffTime) return toStr(dropOffTime)
+  const match = String(dropOffTime).match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}):(\d{2})$/)
+  if (!match) return toStr(dropOffTime)
+  let hours = parseInt(match[2], 10)
+  const minutes = match[3]
+  const period = hours >= 12 ? 'PM' : 'AM'
+  if (hours === 0) hours = 12
+  else if (hours > 12) hours -= 12
+  return `${match[1]} ${hours}:${minutes} ${period}`
+}
+
 function buildWebhookFields(payload) {
   const fields = {}
 
@@ -25,7 +38,7 @@ function buildWebhookFields(payload) {
   fields.Make = toStr(payload.make)
   fields.Model = toStr(payload.model)
   fields.Year = toStr(payload.year)
-  fields['Drop Off Time'] = toStr(payload.drop_off_time)
+  fields['Drop Off Time'] = toAmPmTime(payload.drop_off_time)
   fields.Note = toStr(payload.note)
   fields['Booking Note'] = toStr(payload.booking_note)
   fields.Alert = toStr(payload.alert)
@@ -62,7 +75,7 @@ function buildWebhookFields(payload) {
   fields.make = toStr(payload.make)
   fields.model = toStr(payload.model)
   fields.year = toStr(payload.year)
-  fields.drop_off_time = toStr(payload.drop_off_time)
+  fields.drop_off_time = toAmPmTime(payload.drop_off_time)
   fields.job_type_names = jobTypeNames.join(', ')
   fields.note = toStr(payload.note)
   fields.booking_note = toStr(payload.booking_note)

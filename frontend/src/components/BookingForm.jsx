@@ -39,7 +39,14 @@ const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS',
 function formatDropOffTime(dateStr, timeStr) {
   if (!dateStr || !timeStr) return ''
   const [year, month, day] = dateStr.split('-')
-  return `${day}/${month}/${year} ${timeStr}`
+  const timeParts = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
+  if (!timeParts) return ''
+  let hours = parseInt(timeParts[1], 10)
+  const minutes = timeParts[2]
+  const period = timeParts[3].toUpperCase()
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+  return `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}`
 }
 
 /** @type {BookingData} */
