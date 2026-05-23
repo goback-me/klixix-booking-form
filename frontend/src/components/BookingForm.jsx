@@ -247,11 +247,13 @@ export default function BookingForm() {
     setValidationError(null)
   }
 
-  const submitBooking = async () => {
+  /** @param {number[] | undefined} [overrideExtras] */
+  const submitBooking = async (overrideExtras) => {
     setSubmitting(true)
     setSubmitError('')
 
     const { workshop, service, date, time, carDetails, extras } = bookingData
+    const effectiveExtras = Array.isArray(overrideExtras) ? overrideExtras : extras
     const addonLookup = getAddonLookupByWorkshopId(workshop?.workshopId)
 
     /** @type {string[]} */
@@ -259,7 +261,7 @@ export default function BookingForm() {
     /** @type {string[]} */
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
-    extras.forEach((id) => {
+    effectiveExtras.forEach((id) => {
       if (addonLookup[id]?.name) {
         jobTypeNames.push(addonLookup[id].name)
         selectedAddonNames.push(addonLookup[id].name)
@@ -349,6 +351,7 @@ const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]
           onAutoAdvance={/** @type {(key: string, value: unknown) => void} */ (autoAdvanceWithSelection)}
           onReset={resetSteps}
           onSubmit={submitBooking}
+          onSkipAndSubmit={() => submitBooking([])}
           submitting={submitting}
           submitError={submitError}
           validationError={validationError}
