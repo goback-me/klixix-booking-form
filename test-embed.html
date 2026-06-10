@@ -153,11 +153,11 @@
     (function() {
       var LOCAL_URL = 'http://localhost:5173';
       var origOpen = window.openBooking;
-      window.openBooking = function() {
-        origOpen();
+      window.openBooking = function(mode) {
+        origOpen(mode);
         var frame = document.getElementById('carone-booking-frame');
         if (frame && frame.src.indexOf('localhost') === -1) {
-          frame.src = LOCAL_URL;
+          frame.src = mode === 'vip' ? LOCAL_URL + '/vip' : LOCAL_URL;
         }
       };
     })();

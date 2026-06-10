@@ -40,8 +40,8 @@ const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step
  * }} StepContentProps
  */
 
-/** @param {StepContentProps} props */
-export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading }) {
+/** @param {StepContentProps & { isVip?: boolean }} props */
+export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -105,6 +105,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
               onGoToStep={onGoToStep}
               prefetchedUnavailableDays={prefetchedUnavailableDays}
               prefetchDatesLoading={prefetchDatesLoading}
+              isVip={isVip}
             />
           </div>
         ) : (
@@ -125,6 +126,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
                 onAutoAdvance={onAutoAdvance}
                 onPrev={onPrev}
                 onGoToStep={onGoToStep}
+                isVip={isVip}
               />
             </motion.div>
           </AnimatePresence>

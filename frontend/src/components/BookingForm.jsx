@@ -16,6 +16,7 @@ import { getAddonLookupByWorkshopId } from '../constants/addons'
  *   registration: string,
  *   state: string,
  *   additionalInfo: string,
+ *   vipNumber: string,
  * }} CarDetails
  * @typedef {{
  *   workshop: Workshop | null,
@@ -67,6 +68,7 @@ const initialBookingData = {
     registration: '',
     state: 'QLD',
     additionalInfo: '',
+    vipNumber: '',
   },
   extras: [],
 }
@@ -74,9 +76,10 @@ const initialBookingData = {
 /**
  * @param {number} step
  * @param {BookingData} bookingData
+ * @param {boolean} [isVip]
  * @returns {ValidationError | null}
  */
-function validateStep(step, bookingData) {
+function validateStep(step, bookingData, isVip = false) {
   switch (step) {
     case 0:
       if (!bookingData.workshop) return { message: 'Please select a workshop' }
@@ -101,6 +104,7 @@ function validateStep(step, bookingData) {
       if (!d.model.trim()) missing.push('model')
       if (!year) missing.push('year')
       if (!d.registration.trim()) missing.push('registration')
+      if (isVip && !d.vipNumber?.trim()) missing.push('vipNumber')
       if (missing.length) return { message: 'Please fill in all required fields', fields: missing }
 
       const invalid = []
@@ -131,7 +135,7 @@ function validateStep(step, bookingData) {
   }
 }
 
-export default function BookingForm() {
+export default function BookingForm({ isVip = false }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
@@ -193,14 +197,14 @@ export default function BookingForm() {
         // Add-ons is optional; mark as completed once user reaches summary.
         return currentStep > 4
       }
-      return validateStep(index, bookingData) === null
+      return validateStep(index, bookingData, isVip) === null
     })
     .map((isCompleted, index) => (isCompleted ? index : -1))
     .filter((index) => index >= 0)
 
   const nextStep = () => {
     /** @type {ValidationError | null} */
-    const error = validateStep(currentStep, bookingData)
+    const error = validateStep(currentStep, bookingData, isVip)
     if (error) {
       setValidationError(error)
       return
@@ -274,7 +278,8 @@ export default function BookingForm() {
       .join(' ')
     const userComment = carDetails.additionalInfo?.trim() || 'N/A'
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
-const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}`
+    const vipNote = isVip && carDetails.vipNumber?.trim() ? ` | VIP Number: ${carDetails.vipNumber.trim()}` : ''
+    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vipNote}`
 
     // Get parent_url from query string if present
     let parentPageUrl = '';
@@ -303,6 +308,7 @@ const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]
       is_flexible: bookingData.isFlexible || false,
       page_url: pageUrl,
       parent_page_url: parentPageUrl,
+      ...(isVip ? { vip_number: carDetails.vipNumber?.trim() || '' } : {}),
       ...utmParams,
     }
 
@@ -359,6 +365,7 @@ const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]
           updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}
           prefetchedUnavailableDays={prefetchedUnavailableDays}
           prefetchDatesLoading={prefetchDatesLoading}
+          isVip={isVip}
         />
       </div>
     </div>

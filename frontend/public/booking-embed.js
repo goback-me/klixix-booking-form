@@ -18,6 +18,7 @@
   var iframe = null;
   var isOpen = false;
   var previousBodyOverflow = '';
+  var currentMode = '';
 
   function getIframeOrigin() {
     if (!iframe || !iframe.src) return FORM_ORIGIN;
@@ -29,8 +30,32 @@
     }
   }
 
-  function createOverlay() {
-    if (overlay) return;
+  function buildIframeSrc(mode) {
+    var baseUrl = mode === 'vip' ? FORM_URL + '/vip' : FORM_URL;
+    var parentUrl = encodeURIComponent(window.location.href);
+    var sep = baseUrl.includes('?') ? '&' : '?';
+    var utmParams = [
+      'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
+    ];
+    var searchParams = new URLSearchParams(window.location.search);
+    var utmString = utmParams
+      .map(function(key) {
+        var val = searchParams.get(key);
+        return key + '=' + encodeURIComponent(val || '');
+      })
+      .join('&');
+    return baseUrl + sep + 'parent_url=' + parentUrl + (utmString ? ('&' + utmString) : '');
+  }
+
+  function createOverlay(mode) {
+    if (overlay) {
+      // If mode changed, update iframe src
+      if (iframe && mode !== currentMode) {
+        currentMode = mode;
+        iframe.src = buildIframeSrc(mode);
+      }
+      return;
+    }
 
     overlay = document.createElement('div');
     overlay.id = 'carone-booking-overlay';
@@ -88,26 +113,10 @@
     }
     
 
+    currentMode = mode;
     iframe = document.createElement('iframe');
     iframe.id = 'carone-booking-frame';
-    // Pass parent page URL and UTM/query params as query params
-    var parentUrl = encodeURIComponent(window.location.href);
-    var sep = FORM_URL.includes('?') ? '&' : '?';
-
-    // List of UTM and ad-related params to catch
-    var utmParams = [
-      'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
-    ];
-    var searchParams = new URLSearchParams(window.location.search);
-    var utmString = utmParams
-      .map(function(key) {
-        var val = searchParams.get(key);
-        return key + '=' + encodeURIComponent(val || '');
-      })
-      .join('&');
-
-    var extraParams = 'parent_url=' + parentUrl + (utmString ? ('&' + utmString) : '');
-    iframe.src = FORM_URL + sep + extraParams;
+    iframe.src = buildIframeSrc(mode);
     iframe.title = 'Book a service';
     iframe.allow = 'payment';
     iframe.setAttribute('loading', 'lazy');
@@ -137,8 +146,8 @@
     });
   }
 
-  function openBooking() {
-    createOverlay();
+  function openBooking(mode) {
+    createOverlay(mode || 'regular');
     if (!overlay) return;
     overlay.classList.add('open');
     previousBodyOverflow = document.body.style.overflow;
@@ -159,6 +168,7 @@
   globalWindow.closeBooking = closeBooking;
 
   // Auto-bind buttons with data-action="open-booking"
+  // Add data-booking-type="vip" to open the VIP form
   function bindButtons() {
     document.querySelectorAll('[data-action="open-booking"]').forEach(function (el) {
       var btn = /** @type {HTMLElement} */ (el);
@@ -167,7 +177,8 @@
       btn.style.cursor = 'pointer';
       btn.addEventListener('click', function (e) {
         e.preventDefault();
-        openBooking();
+        var mode = btn.dataset.bookingType === 'vip' ? 'vip' : 'regular';
+        openBooking(mode);
       });
     });
   }

@@ -16,9 +16,9 @@ function formatDate(dateStr) {
 }
 
 /**
- * @param {{ bookingData: any }} props
+ * @param {{ bookingData: any, isVip?: boolean }} props
  */
-export default function Step5Summary({ bookingData }) {
+export default function Step5Summary({ bookingData, isVip = false }) {
   const { workshop, service, date, time, isFlexible, carDetails, extras } = bookingData
   const extraServices = getAddonsByWorkshopId(workshop?.workshopId)
 
@@ -126,6 +126,12 @@ export default function Step5Summary({ bookingData }) {
                 <span className="text-gray-500">Phone</span>
                 <span className="text-gray-900 font-medium">{contactPhone}</span>
               </div>
+              {isVip && carDetails?.vipNumber && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">VIP number</span>
+                  <span className="text-gray-900 font-medium">{carDetails.vipNumber}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

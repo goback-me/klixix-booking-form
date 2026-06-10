@@ -4,7 +4,7 @@ import BreadcrumbBar from '../BreadcrumbBar'
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any, onGoToStep?: (step: number) => void }} props
  */
-export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onGoToStep }) {
+export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onGoToStep, isVip = false }) {
   const details = bookingData.carDetails
 
   const auStates = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
@@ -150,6 +150,21 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               ))}
             </select>
           </div>
+
+          {isVip && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-500 text-gray-900 mb-2">
+                VIP number <span className="text-[rgba(255,77,36,1)]">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your VIP number"
+                value={details.vipNumber || ''}
+                onChange={(e) => handleChange('vipNumber', e.currentTarget.value)}
+                className={inputClass('vipNumber')}
+              />
+            </div>
+          )}
 
           <div className="md:col-span-2">
             <label className="block text-sm font-500 text-gray-900 mb-2">Additional information</label>
