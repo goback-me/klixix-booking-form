@@ -31,7 +31,7 @@
   }
 
   function buildIframeSrc(mode) {
-    var baseUrl = mode === 'vip' ? FORM_URL + '/vip' : FORM_URL;
+    var baseUrl = mode === 'vip' ? FORM_URL + '/?mode=vip' : FORM_URL;
     var parentUrl = encodeURIComponent(window.location.href);
     var sep = baseUrl.includes('?') ? '&' : '?';
     var utmParams = [
@@ -94,7 +94,7 @@
       '  }',
       '  #carone-booking-frame {',
       '    max-width: 960px;',
-      '    max-height: 96vh;',
+      '    max-height: 100%;',
       '    border-radius: 16px;',
       '    box-shadow: 0 24px 80px rgba(0,0,0,0.25);',
       '  }',

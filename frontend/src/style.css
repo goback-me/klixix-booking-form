@@ -325,6 +325,16 @@ box-shadow: 0 0 32px 0 rgba(0, 0, 0, 0.08);
   will-change: opacity;
 }
 
+/* Hide all scrollbars globally — form is embedded, scrolling handled by parent */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* Keep panels scrollable but hide visible scrollbar chrome. */
 .no-scrollbar {
   -ms-overflow-style: none;

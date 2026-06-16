@@ -33,6 +33,16 @@ import { getAddonLookupByWorkshopId } from '../constants/addons'
 
 const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
 
+const QUOTE_PAGE_PATHS = [
+  '/spring-service-hendra-g/',
+  '/pre-purchase-new/',
+  '/spring-service-woolloongabba-g/',
+  '/roadworthy-certificate-brisbane/',
+  '/european-car-service-brisbane/',
+]
+
+const THANK_YOU_URL = 'https://car-one.com.au/thank-you-quote-g/'
+
 /**
  * @param {string} dateStr
  * @param {string} timeStr
@@ -141,22 +151,36 @@ export default function BookingForm({ isVip = false }) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [validationError, setValidationError] = useState(/** @type {ValidationError | null} */ (null))
+  const [parentUrl, setParentUrl] = useState('')
   // Store UTM/ad params from iframe URL
   const [utmParams, setUtmParams] = useState({})
-  // On mount, read UTM/ad params from iframe URL
+
+  // Broadcast height to parent for inline iframe auto-resize
+  useEffect(() => {
+    if (window.parent === window) return
+    // Step-based minimum heights — summary needs the most room
+    const stepMinHeights = [700, 700, 760, 860, 780, 980]
+    const minHeight = stepMinHeights[currentStep] ?? 800
+    const height = Math.max(minHeight, window.innerHeight)
+    window.parent.postMessage({ type: 'carone-resize', height }, '*')
+  }, [currentStep])
+  // On mount, read UTM/ad params and parent_url from iframe URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
+      setParentUrl(searchParams.get('parent_url') || '');
       const utmKeys = [
         'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
       ];
       const paramsObj = /** @type {Record<string, string>} */ ({});
       utmKeys.forEach((key) => {
         paramsObj[key] = searchParams.get(key) || '';
-      }); 
+      });
       setUtmParams(paramsObj);
     }
   }, []);
+
+  const isQuotePage = QUOTE_PAGE_PATHS.some((path) => parentUrl.includes(path))
 
   const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
   const [prefetchedUnavailableDays, setPrefetchedUnavailableDays] = useState(/** @type {string[] | null} */ (null))
@@ -331,7 +355,11 @@ export default function BookingForm({ isVip = false }) {
         body: JSON.stringify(payload),
       }).catch(() => {})
 
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+      if (isQuotePage) {
+        window.top.location.href = THANK_YOU_URL
+      } else {
+        setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
@@ -366,6 +394,7 @@ export default function BookingForm({ isVip = false }) {
           prefetchedUnavailableDays={prefetchedUnavailableDays}
           prefetchDatesLoading={prefetchDatesLoading}
           isVip={isVip}
+          isQuotePage={isQuotePage}
         />
       </div>
     </div>

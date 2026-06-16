@@ -40,8 +40,8 @@ const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step
  * }} StepContentProps
  */
 
-/** @param {StepContentProps & { isVip?: boolean }} props */
-export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip }) {
+/** @param {StepContentProps & { isVip?: boolean, isQuotePage?: boolean }} props */
+export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip, isQuotePage }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -68,9 +68,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
     }
   }
 
-  const contentScrollClass = isSummaryStep
-    ? 'no-scrollbar flex-1 min-h-0 overflow-hidden'
-    : 'no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden'
+  const contentScrollClass = 'no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden'
   const shouldShowFooter = !isAutoAdvanceStep || Boolean(submitError) || Boolean(validationError)
   const footerPaddingClass = (isDateTimeStep || isAddonsStep) ? 'p-2 sm:p-4 md:p-5' : 'p-3 sm:p-4 md:p-5'
   const footerClass = isSummaryStep
@@ -213,7 +211,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
                     <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                     Booking...
                   </>
-                ) : 'Confirm'}
+                ) : isQuotePage ? 'Submit' : 'Confirm'}
               </button>
             </div>
             <div className="hidden sm:flex sm:items-center sm:gap-3 sm:ml-auto">
@@ -236,7 +234,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
                     <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                     Booking...
                   </>
-                ) : 'Confirm'}
+                ) : isQuotePage ? 'Submit' : 'Confirm'}
               </button>
             </div>
           </>

@@ -37,8 +37,8 @@ export default function Step5Summary({ bookingData, isVip = false }) {
   }, [])
 
   return (
-    <div className="p-2.5 sm:p-5 md:p-6 pb-0 flex flex-col min-w-0 h-full overflow-hidden">
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+    <div className="p-2.5 sm:p-5 md:p-6 pb-0 flex flex-col min-w-0 h-full">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar">
         <h2 className="text-[1.6rem] sm:text-3xl font-normal text-gray-900 text-center mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-display)' }}>
           Booking summary!
         </h2>
