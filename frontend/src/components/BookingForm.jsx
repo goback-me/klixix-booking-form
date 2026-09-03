@@ -17,6 +17,9 @@ import { getAddonLookupByWorkshopId } from '../constants/addons'
  *   state: string,
  *   additionalInfo: string,
  *   vipNumber: string,
+ *   vin: string,
+ *   colour: string,
+ *   bodyType: string,
  * }} CarDetails
  * @typedef {{
  *   workshop: Workshop | null,
@@ -79,6 +82,9 @@ const initialBookingData = {
     state: 'QLD',
     additionalInfo: '',
     vipNumber: '',
+    vin: '',
+    colour: '',
+    bodyType: '',
   },
   extras: [],
 }
@@ -303,7 +309,8 @@ export default function BookingForm({ isVip = false }) {
     const userComment = carDetails.additionalInfo?.trim() || 'N/A'
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
     const vipNote = isVip && carDetails.vipNumber?.trim() ? ` | VIP Number: ${carDetails.vipNumber.trim()}` : ''
-    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vipNote}`
+    const vinNote = carDetails.vin?.trim() ? ` | VIN: ${carDetails.vin.trim()}` : ''
+    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}`
 
     // Get parent_url from query string if present
     let parentPageUrl = '';
@@ -323,6 +330,7 @@ export default function BookingForm({ isVip = false }) {
       make: carDetails.make,
       model: carDetails.model,
       year: carDetails.year,
+      vin: carDetails.vin?.trim() || '',
       drop_off_time: formatDropOffTime(date, time),
       job_type_names: jobTypeNames,
       note: enrichedNote,

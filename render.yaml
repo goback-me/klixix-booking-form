@@ -1,0 +1,70 @@
+# Render blueprint for the Car One booking API.
+#
+# IMPORTANT: this is the TEST deployment. It deliberately does NOT define
+# INFOAGENT_LIVE_CLIENT_ID / INFOAGENT_LIVE_CLIENT_SECRET, so even if someone
+# sets INFOAGENT_ENV=live by mistake the server fails safe with "lookup
+# unavailable" instead of spending money. Bookings keep working either way.
+#
+# Secrets marked `sync: false` are entered in the Render dashboard and are
+# never stored in this repository.
+services:
+  - type: web
+    name: carone-booking-api-test
+    runtime: node
+    rootDir: backend
+    plan: free
+    region: singapore # closest Render region to Brisbane
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      # --- InfoAgent: sandbox only ---
+      - key: INFOAGENT_ENV
+        value: test
+      - key: INFOAGENT_DAILY_LIMIT
+        value: "30"
+      - key: INFOAGENT_SESSION_LIMIT
+        value: "5"
+      - key: INFOAGENT_TEST_CLIENT_ID
+        sync: false
+      - key: INFOAGENT_TEST_CLIENT_SECRET
+        sync: false
+
+      # --- Lookup session signing secret (any long random string) ---
+      - key: LOOKUP_SESSION_SECRET
+        generateValue: true
+
+      # --- Cloudflare Turnstile secret (mandatory before INFOAGENT_ENV=live) ---
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+
+      # --- Upstash Redis: durable spend counters. Free tier sleeps and forgets
+      #     memory counters, so set these before going live even on Render. ---
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+
+      # --- Must match the deployed frontend origin exactly, no trailing slash ---
+      - key: ALLOWED_ORIGIN
+        sync: false
+
+      # --- Supabase booking storage + internal admin page ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASSWORD
+        sync: false
+
+      # --- MechanicDesk + webhooks ---
+      - key: HENDRA_TOKEN
+        sync: false
+      - key: WOOLLOONGABBA_TOKEN
+        sync: false
+      - key: WEBHOOK_URL
+        sync: false
+      - key: ZAPIER_WEBHOOK_URL
+        sync: false

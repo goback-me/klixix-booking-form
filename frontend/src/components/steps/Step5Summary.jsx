@@ -39,12 +39,12 @@ export default function Step5Summary({ bookingData, isVip = false }) {
   return (
     <div className="p-2.5 sm:p-5 md:p-6 pb-0 flex flex-col min-w-0 h-full">
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar">
-        <h2 className="text-[1.6rem] sm:text-3xl font-normal text-gray-900 text-center mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-display)' }}>
+        <h2 className="text-[1.9rem] sm:text-[42px] leading-tight font-normal text-[#111] text-center mb-2 sm:mb-3" style={{ fontFamily: 'var(--font-display)' }}>
           Booking summary!
         </h2>
         <div className="border-t border-gray-200 mb-2 sm:mb-4" />
 
-        <p className="text-center text-[1.35rem] sm:text-3xl md:text-4xl leading-tight text-gray-800 mb-2 sm:mb-4 break-words" style={{ fontFamily: 'var(--font-display)' }}>
+        <p className="text-center text-[1.15rem] sm:text-[26px] leading-[1.25] text-[#111] mb-2 sm:mb-4 break-words" style={{ fontFamily: 'var(--font-display)' }}>
           Thank you, your booking request
           <br />
           has been received!
@@ -64,27 +64,34 @@ export default function Step5Summary({ bookingData, isVip = false }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
-          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-1">
-            <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
-              <Clock3 className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
-              Time
-            </p>
-            <p className="text-sm sm:text-base font-medium text-gray-900">{time || 'Not selected'}{isFlexible ? ' (Flexible)' : ''}</p>
-          </div>
-          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-2 sm:col-span-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
+          <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Date
             </p>
-            <p className="text-[13px] sm:text-base font-medium text-gray-900 break-words leading-[1.25]">{formatDate(date)}</p>
+            <p className="text-[13px] sm:text-base font-medium text-[#111] break-words leading-[1.25]">{formatDate(date)}</p>
           </div>
-          <div className="bg-gray-100 rounded-xl p-2.5 sm:p-3 min-w-0 col-span-2 sm:col-span-1">
+          <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
+            <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
+              <Clock3 className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
+              Time
+            </p>
+            <p className="text-sm sm:text-base font-medium text-[#111]">{time || 'Not selected'}{isFlexible ? ' (Flexible)' : ''}</p>
+          </div>
+          <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0 col-span-2 lg:col-span-1">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Workshop
             </p>
-            <p className="text-[13px] sm:text-base font-medium text-gray-900 break-words leading-[1.25]">{workshopAddress}</p>
+            <p className="text-[13px] sm:text-base font-medium text-[#111] break-words leading-[1.25]">{workshopAddress}</p>
+          </div>
+          <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
+            <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
+              <WalletCards className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
+              Total charges
+            </p>
+            <p className="text-sm sm:text-base font-medium text-[#111]">${extrasTotal.toFixed(2)}</p>
           </div>
         </div>
 
@@ -141,7 +148,7 @@ export default function Step5Summary({ bookingData, isVip = false }) {
         {carDetails.email ? (
           <>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)]">{carDetails.email}</span><span className="mx-2"> </span></>
         ) : null}
-        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:0736070215">0736070215</a></span>
+        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:+61736070215">(07) 3607 0215</a></span>
       </div>
     </div>
   )

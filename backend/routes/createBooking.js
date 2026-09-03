@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { body, validationResult } from 'express-validator'
+import { insertBooking, updateBookingSync } from '../lib/bookingsStore.js'
 
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
@@ -98,37 +99,54 @@ router.post('/create-booking', validate, async (req, res) => {
 
   const token = tokenMap[workshopId]
   if (!token) {
-    return res.status(500).json({
-      error: `Missing API token for workshop '${workshopId}'. Check backend .env variables.`,
-    })
+    console.error(`Missing MechanicDesk token for workshop '${workshopId}'`)
+    return res.status(500).json({ error: 'Booking is temporarily unavailable. Please call us to book.' })
   }
 
+  // 1) Store the booking first, so it is never lost even if MechanicDesk is down.
+  let bookingId = null
   try {
-    const payload = {
-      token,
-      ...bookingFields,
-    }
+    bookingId = await insertBooking(req.body)
+  } catch (dbError) {
+    // Storage is best-effort: log loudly but keep going so the customer can still book.
+    console.error('Booking DB insert failed (continuing to MechanicDesk):', dbError.message)
+  }
 
+  // 2) Forward to MechanicDesk, then record the outcome against the stored row.
+  let mechanicDeskOk = false
+  let responseData = { ok: true }
+  try {
     const response = await fetch(
       'https://www.mechanicdesk.com.au/booking_requests/create_booking',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ token, ...bookingFields }),
       }
     )
 
     if (!response.ok) {
       const text = await response.text()
-      throw new Error(text || 'Booking creation failed')
+      throw new Error(text || `MechanicDesk returned ${response.status}`)
     }
 
-    const data = await response.json().catch(() => ({ ok: true }))
-    return res.status(200).json(data)
+    responseData = await response.json().catch(() => ({ ok: true }))
+    mechanicDeskOk = true
+    const ref = responseData?.booking_id || responseData?.id || responseData?.request_id || null
+    updateBookingSync(bookingId, { status: 'sent', response: responseData, ref: ref ? String(ref) : null })
+      .catch((e) => console.error('Booking sync-status update failed:', e.message))
   } catch (error) {
-    console.error('Create booking API error:', error)
-    return res.status(500).json({ error: error.message || 'Failed to create booking' })
+    console.error('MechanicDesk create booking error:', error.message)
+    updateBookingSync(bookingId, { status: 'failed', response: { error: String(error.message).slice(0, 500) } })
+      .catch((e) => console.error('Booking sync-status update failed:', e.message))
   }
+
+  // The request is "received" if it landed anywhere we can act on: the database
+  // (staff will reconcile a failed MechanicDesk sync) or MechanicDesk itself.
+  if (bookingId || mechanicDeskOk) {
+    return res.status(200).json({ ...responseData, stored: Boolean(bookingId), synced: mechanicDeskOk })
+  }
+  return res.status(502).json({ error: 'We could not submit your booking. Please try again or call us.' })
 })
 
 export default router
