@@ -20,9 +20,19 @@ if (process.env.VERCEL || process.env.RENDER) {
 // ✅ Security headers
 app.use(helmet())
 
-// ✅ CORS - only allow your frontend
+// ✅ CORS - allow one or more front-end origins.
+// ALLOWED_ORIGIN may be a comma-separated list, e.g.
+//   "https://embed.car-one.com.au,https://app.aappi.com"
+// Non-browser callers (server-to-server, curl) send no Origin and are allowed.
+const allowedOrigins = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
 app.use(cors({
-  origin: (process.env.ALLOWED_ORIGIN || 'http://localhost:5173').replace(/\/+$/, ''),
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin.replace(/\/+$/, ''))) return callback(null, true)
+    return callback(null, false)
+  },
   methods: ['GET', 'POST'],
 }))
 
