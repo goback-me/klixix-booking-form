@@ -11,27 +11,28 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
     {
       id: 1,
       name: 'General service',
-      image: './general-service.webp',
+      badge: 'Most booked',
+      image: './svc-general.png',
     },
     {
       id: 2,
       name: 'Vehicle repair',
-      image: './vehicle-repair.webp',
+      image: './svc-vehicle-repair.png',
     },
     {
       id: 3,
       name: 'Roadworthy certificate',
-      image: './roadworthy-certificate.webp',
+      image: './svc-roadworthy.png',
     },
     {
       id: 4,
       name: 'Pre purchase inspection',
-      image: './pre-purchase-inspection.webp',
+      image: './svc-prepurchase.png',
     },
     {
       id: 5,
       name: 'Other enquiry',
-      image: './other-enquiry.webp',
+      image: './svc-other.png',
     },
   ]
 
@@ -40,8 +41,8 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
       <div className="flex-1 flex flex-col">
         <div className="sm:hidden mb-2">
           <div className="min-w-0">
-            <h2 className="text-[26px] leading-[1.08] tracking-[-0.015em] text-gray-900 mb-0.5 break-words">Select a service</h2>
-            <p className="text-[15px] text-gray-600 break-words mb-0">What can we help you with today?</p>
+            <h2 className="text-[26px] leading-[1.1] tracking-[-0.015em] text-[#111] mb-0.5 break-words">What type of service do you need?</h2>
+            <p className="text-sm font-display text-[#333] break-words mb-0">Select one, you can add extras in step 5</p>
             {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
           </div>
         </div>
@@ -56,8 +57,8 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
             </button>
           )}
           <div className="min-w-0 text-left w-full">
-            <h2 className="text-[32px] leading-[1.08] tracking-[-0.015em] text-gray-900 mb-0.5 break-words">Select a service</h2>
-            <p className="text-md text-gray-600 break-words mb-0">What can we help you with today?</p>
+            <h2 className="text-[30px] leading-[1.1] tracking-[-0.015em] text-[#111] mb-0.5 break-words">What type of service do you need?</h2>
+            <p className="text-sm font-display text-[#333] break-words mb-0">Select one, you can add extras in step 5</p>
             {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
           </div>
         </div>
