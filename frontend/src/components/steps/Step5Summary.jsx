@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarDays, Clock3, MapPin, User, Wrench, WalletCards } from 'lucide-react'
+import { BadgeCheck, CalendarDays, Clock3, MapPin, User, Wrench } from 'lucide-react'
 import { getAddonsByWorkshopId } from '../../constants/addons'
 import { useEffect } from 'preact/hooks'
 
@@ -64,7 +64,7 @@ export default function Step5Summary({ bookingData, isVip = false }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
           <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
@@ -85,13 +85,6 @@ export default function Step5Summary({ bookingData, isVip = false }) {
               Workshop
             </p>
             <p className="text-[13px] sm:text-base font-medium text-[#111] break-words leading-[1.25]">{workshopAddress}</p>
-          </div>
-          <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
-            <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
-              <WalletCards className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
-              Total charges
-            </p>
-            <p className="text-sm sm:text-base font-medium text-[#111]">${extrasTotal.toFixed(2)}</p>
           </div>
         </div>
 
