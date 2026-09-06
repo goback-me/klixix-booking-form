@@ -123,25 +123,12 @@ export default function ServiceCard({
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
                                                                 {!isCompact && serviceAddress && (
-                  isWorkshop && mapHref ? (
-                    <a
-                      href={mapHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={stopCardClick}
-                      className="flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display mb-1 break-words text-[#111] hover:text-[rgba(255,77,36,1)] hover:underline"
-                    >
-                      <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
-                      {serviceAddress}
-                    </a>
-                  ) : (
-                    <p
-                      className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111]' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
-                    >
-                      <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
-                      {serviceAddress}
-                    </p>
-                  )
+                  <p
+                    className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111]' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
+                  >
+                    <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
+                    {serviceAddress}
+                  </p>
                 )}
                 {!isCompact && serviceTime && (
                                                                     <p
@@ -152,23 +139,12 @@ export default function ServiceCard({
                   </p>
                 )}
                 {!isCompact && servicePhone && (
-                  isWorkshop && telHref ? (
-                    <a
-                      href={telHref}
-                      onClick={stopCardClick}
-                      className="flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] hover:text-[rgba(255,77,36,1)] hover:underline"
-                    >
-                      <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
-                      {servicePhone}
-                    </a>
-                  ) : (
-                    <p
-                      className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
-                    >
-                      <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
-                      {servicePhone}
-                    </p>
-                  )
+                  <p
+                    className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
+                  >
+                    <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
+                    {servicePhone}
+                  </p>
                 )}
             </div>
         </div>
