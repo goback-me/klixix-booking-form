@@ -31,21 +31,11 @@ export default function ServiceCard({
     const serviceInitials = typeof service === 'object' ? service?.initials : null
     const serviceRating = typeof service === 'object' ? service?.rating : null
     const serviceAddress = typeof service === 'object' ? service?.address : null
-    const serviceMapUrl = typeof service === 'object' ? service?.mapUrl : null
     const serviceTime = typeof service === 'object' ? service?.time : null
     const servicePhone = typeof service === 'object' ? service?.phone : null
     const isCompact = variant === 'compact'
     const isWorkshop = variant === 'workshop'
     const isService = variant === 'service'
-
-    // Tap-to-call and map links for workshop cards. Building them here keeps the
-    // display text (e.g. "(07) 3607 0215") separate from the dial string.
-    const telHref = servicePhone ? `tel:${String(servicePhone).replace(/[^\d+]/g, '').replace(/^0/, '+61')}` : null
-    // Prefer an explicit business listing URL so the address opens the actual
-    // Car One place on Google Maps, not just a pin on the street address.
-    const mapHref = serviceMapUrl || (serviceAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(serviceAddress)}` : null)
-    /** A tap on the phone/address link must not also select the card. */
-    const stopCardClick = (/** @type {any} */ e) => e.stopPropagation()
 
     return (
         <motion.div
