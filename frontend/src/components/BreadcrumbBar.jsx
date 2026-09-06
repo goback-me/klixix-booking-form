@@ -54,7 +54,7 @@ export default function BreadcrumbBar({ bookingData, onGoToStep }) {
           key={step}
           type="button"
           onClick={() => onGoToStep(step)}
-          className="inline-flex items-center gap-1.5 text-[14px] text-[#333] hover:text-gray-900 transition-colors group mb-5"
+          className="inline-flex items-center gap-1.5 text-[14px] text-[#333] hover:text-gray-900 transition-colors group mb-2"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <Icon size={18} className="text-[rgba(255,77,36,1)] shrink-0" />

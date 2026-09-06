@@ -79,16 +79,16 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
     <>
       <div className={contentScrollClass}>
         {step !== 0 && !isSummaryStep && (
-          <div className="sm:hidden px-3 pt-2 pb-1">
+          <div className="sm:hidden px-3 pt-1 pb-0.5">
             <button
               onClick={onPrev}
               disabled={submitting}
-              className="inline-flex items-center gap-3 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-black bg-white">
-                <ArrowLeft className="h-5 w-5 text-black" strokeWidth={2.1} aria-hidden="true" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-white">
+                <ArrowLeft className="h-4 w-4 text-black" strokeWidth={2.2} aria-hidden="true" />
               </span>
-              <span className="text-[1.5rem] leading-none font-light text-black">Back</span>
+              <span className="text-base leading-none font-medium text-black">Back</span>
             </button>
           </div>
         )}

@@ -336,6 +336,16 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
         <p className="text-sm font-display text-[#333] mb-0 break-words">Enter your rego or VIN and we&apos;ll find your vehicle for you.</p>
         {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
 
+        {manualEntry && lookupStatus === 'idle' && !foundVehicle ? (
+          <button
+            type="button"
+            onClick={() => setManualEntry(false)}
+            className="mb-3 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[rgba(255,77,36,1)]"
+          >
+            <Search className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+            Look up my vehicle by rego or VIN instead
+          </button>
+        ) : (
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:p-4 mb-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1" role="tablist" aria-label="Search by rego or VIN">
@@ -524,6 +534,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </p>
           )}
         </div>
+        )}
 
         {showVehicleFields && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
