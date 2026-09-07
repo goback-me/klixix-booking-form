@@ -19,10 +19,15 @@ function formatBreadcrumbDate(dateStr, timeStr, isFlexible) {
   } else if (isFlexible) {
     parts.push('Flexible')
   }
-  return parts.join(' - ')
+  return parts.join(' · ')
 }
 
 /**
+ * A single compact, horizontally-scrollable row of chips summarising what the
+ * customer has already chosen (workshop / service / date). Each chip is
+ * tappable to jump back to that step. Keeps the selected context visible while
+ * taking only one line of height, so the actual step content sits higher up.
+ *
  * @param {{
  *   bookingData: any,
  *   onGoToStep: (step: number) => void,
@@ -48,19 +53,22 @@ export default function BreadcrumbBar({ bookingData, onGoToStep }) {
   if (!items.length) return null
 
   return (
-    <div className="w-full border-t border-gray-200 mt-2 pt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5">
-      {items.map(({ icon: Icon, label, step }) => (
-        <button
-          key={step}
-          type="button"
-          onClick={() => onGoToStep(step)}
-          className="inline-flex items-center gap-1.5 text-[14px] text-[#333] hover:text-gray-900 transition-colors group mb-2"
-          style={{ fontFamily: 'var(--font-display)' }}
-        >
-          <Icon size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
-          <span className="group-hover:underline underline-offset-2 text-[14px]">{label}</span>
-        </button>
-      ))}
+    <div className="mt-2 pt-2 border-t border-gray-200">
+      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar -mx-0.5 px-0.5">
+        {items.map(({ icon: Icon, label, step }) => (
+          <button
+            key={step}
+            type="button"
+            onClick={() => onGoToStep(step)}
+            title={`Edit: ${label}`}
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[12.5px] text-[#333] transition-colors hover:border-[rgba(255,77,36,0.5)] hover:bg-[#FFF4EB] hover:text-[#111]"
+            style={{ fontFamily: 'var(--font-display)' }}
+          >
+            <Icon size={13} className="text-[rgba(255,77,36,1)] shrink-0" />
+            <span className="whitespace-nowrap max-w-[42vw] sm:max-w-none truncate">{label}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

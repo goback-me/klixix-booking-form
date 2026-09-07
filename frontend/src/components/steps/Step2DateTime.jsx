@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import BreadcrumbBar from '../BreadcrumbBar'
+import StepHeader from '../StepHeader'
 
 const AU_TIMEZONE = 'Australia/Brisbane'
 const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -214,7 +214,7 @@ function SlotButton({ slot, selected, onClick }) {
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, prefetchedUnavailableDays?: string[] | null, prefetchDatesLoading?: boolean, onGoToStep?: (step: number) => void }} props
  */
-export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchDatesLoading = false, onGoToStep }) {
+export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchDatesLoading = false, onPrev, onGoToStep }) {
   const [currentTime, setCurrentTime] = useState(() => new Date())
   const nowInAu = useMemo(() => getAustralianDateParts(currentTime), [currentTime])
   const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
@@ -494,21 +494,25 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
   return (
     <div className="p-2.5 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <h2 className="text-lg sm:text-2xl md:text-3xl font-normal text-gray-900 break-words">Drop off date &amp; time</h2>
-          <button
-            type="button"
-            onClick={() => setIsFlexible((prev) => !prev)}
-            className="hidden sm:flex items-center gap-2 border border-gray-200 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 bg-white shrink-0"
-          >
-            <span className={`w-9 sm:w-11 h-5 sm:h-6 rounded-full relative transition ${isFlexible ? 'bg-orange-500' : 'bg-gray-300'}`}>
-              <span className={`absolute top-0.5 h-4 sm:h-5 w-4 sm:w-5 rounded-full bg-white transition ${isFlexible ? 'left-4 sm:left-5' : 'left-0.5'}`} />
-            </span>
-            <span className="text-xs sm:text-sm text-gray-800">I'm flexible</span>
-          </button>
-        </div>
-        <p className="text-xs sm:text-sm text-gray-600 mb-0">Select your preferred appointment slot.</p>
-        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
+        <StepHeader
+          title="Drop off date & time"
+          subtitle="Select your preferred appointment slot."
+          onBack={onPrev}
+          bookingData={bookingData}
+          onGoToStep={onGoToStep}
+          rightSlot={(
+            <button
+              type="button"
+              onClick={() => setIsFlexible((prev) => !prev)}
+              className="hidden sm:flex items-center gap-2 border border-gray-200 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 bg-white shrink-0"
+            >
+              <span className={`w-9 sm:w-11 h-5 sm:h-6 rounded-full relative transition ${isFlexible ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                <span className={`absolute top-0.5 h-4 sm:h-5 w-4 sm:w-5 rounded-full bg-white transition ${isFlexible ? 'left-4 sm:left-5' : 'left-0.5'}`} />
+              </span>
+              <span className="text-xs sm:text-sm text-gray-800">I'm flexible</span>
+            </button>
+          )}
+        />
 
         {/* Mobile: Compact 5-date picker */}
         <div className="lg:hidden bg-gray-50 rounded-2xl p-2.5 sm:p-4 md:p-5 border border-gray-100 relative">

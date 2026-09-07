@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { AlertTriangle, CheckCircle2, Search, User } from 'lucide-react'
-import BreadcrumbBar from '../BreadcrumbBar'
+import StepHeader from '../StepHeader'
 import { loadTurnstile, TURNSTILE_SITE_KEY } from '../../lib/turnstile'
 
 const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
@@ -14,7 +14,7 @@ function normalizePlate(value) {
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any, onGoToStep?: (step: number) => void }} props
  */
-export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onGoToStep, isVip = false }) {
+export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onPrev, onGoToStep, isVip = false }) {
   const details = bookingData.carDetails
 
   const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -332,9 +332,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
   return (
     <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl md:text-3xl text-[#111] mb-1 break-words">Vehicle &amp; contact details</h2>
-        <p className="text-sm font-display text-[#333] mb-0 break-words">Enter your rego or VIN and we&apos;ll find your vehicle for you.</p>
-        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
+        <StepHeader
+          title="Vehicle & contact details"
+          subtitle="Enter your rego or VIN and we'll find your vehicle for you."
+          onBack={onPrev}
+          bookingData={bookingData}
+          onGoToStep={onGoToStep}
+        />
 
         {manualEntry && lookupStatus === 'idle' && !foundVehicle ? (
           <button

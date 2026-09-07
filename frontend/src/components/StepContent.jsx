@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'motion/react'
-import { ArrowLeft } from 'lucide-react'
 import Step0Workshop from './steps/Step0Workshop'
 import Step1Service from './steps/Step1Service'
 import Step2DateTime from './steps/Step2DateTime'
@@ -78,20 +77,6 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
   return (
     <>
       <div className={contentScrollClass}>
-        {step !== 0 && !isSummaryStep && (
-          <div className="sm:hidden px-3 pt-1 pb-0.5">
-            <button
-              onClick={onPrev}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-white">
-                <ArrowLeft className="h-4 w-4 text-black" strokeWidth={2.2} aria-hidden="true" />
-              </span>
-              <span className="text-base leading-none font-medium text-black">Back</span>
-            </button>
-          </div>
-        )}
         {step === 2 ? (
           <div className="h-full">
             <CurrentStep
@@ -137,15 +122,6 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
         {validationError && (
           <p className="w-full text-sm text-red-500 mb-1">{validationError.message}</p>
         )}
-        {step !== 0 && step !== 1 && !isSummaryStep && (
-          <button
-            onClick={onPrev}
-            disabled={submitting}
-            className={`${isSummaryStep ? 'w-full sm:w-auto' : 'hidden sm:inline-flex sm:w-auto'} px-5 sm:px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
-          >
-            Back
-          </button>
-        )}
         {isSummaryStep ? (
           <div className="w-full grid grid-cols-2 sm:flex sm:flex-nowrap items-stretch sm:items-center sm:justify-between gap-2 sm:gap-3">
             <button
@@ -184,7 +160,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
             </div>
             <button
               onClick={onNext}
-              className="hidden sm:inline-flex w-full sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="hidden sm:inline-flex w-full sm:w-auto sm:ml-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Next
             </button>
@@ -242,7 +218,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
           !isAutoAdvanceStep && (
             <button
               onClick={onNext}
-              className="w-full sm:w-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
+              className="w-full sm:w-auto sm:ml-auto px-8 py-2 bg-[rgba(255,77,36,1)] text-white rounded-full hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200"
             >
               Next
             </button>
