@@ -536,6 +536,38 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
         </div>
         )}
 
+        {manualEntry && lookupStatus === 'idle' && !foundVehicle && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+            <div>
+              <label className="block text-sm font-medium font-display text-[#111] mb-2">
+                Registration <span className="text-[rgba(255,77,36,1)]">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. ABC123"
+                value={details.registration}
+                onChange={(e) => handleChange('registration', e.currentTarget.value.toUpperCase())}
+                className={inputClass('registration')}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
+              <select
+                value={details.state}
+                onChange={(e) => handleChange('state', e.currentTarget.value)}
+                className={inputClass('state')}
+              >
+                {AU_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+
         {showVehicleFields && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
             <div>

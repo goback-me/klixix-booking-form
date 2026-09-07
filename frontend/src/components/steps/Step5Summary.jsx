@@ -88,8 +88,8 @@ export default function Step5Summary({ bookingData, isVip = false }) {
           </div>
         </div>
 
-        <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4">
+          <div className="bg-gray-50 rounded-2xl p-3.5 sm:p-4 border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <Wrench className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Service details
             </h3>
@@ -109,7 +109,7 @@ export default function Step5Summary({ bookingData, isVip = false }) {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          <div className="bg-gray-50 rounded-2xl p-3.5 sm:p-4 border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
               <User className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Contact information
             </h3>
@@ -118,9 +118,9 @@ export default function Step5Summary({ bookingData, isVip = false }) {
                 <span className="text-gray-500">Name</span>
                 <span className="text-gray-900 font-medium">{contactName}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Email</span>
-                <span className="text-gray-900 font-medium">{contactEmail}</span>
+              <div className="flex justify-between gap-3">
+                <span className="text-gray-500 shrink-0">Email</span>
+                <span className="text-gray-900 font-medium text-right break-all min-w-0">{contactEmail}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Phone</span>
@@ -137,11 +137,11 @@ export default function Step5Summary({ bookingData, isVip = false }) {
         </div>
       </div>
 
-      <div className="mt-auto text-center text-[11px] sm:text-sm leading-tight text-gray-700 break-words p-2">
+      <div className="mt-auto text-center text-[11px] sm:text-sm leading-snug text-gray-700 break-words p-2 space-y-0.5">
         {carDetails.email ? (
-          <>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)]">{carDetails.email}</span><span className="mx-2"> </span></>
+          <p>A confirmation email has been sent to <span className="text-[rgba(255,77,36,1)] break-all">{carDetails.email}</span></p>
         ) : null}
-        Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:+61736070215">(07) 3607 0215</a></span>
+        <p>Need help? Call us at <span className="text-[rgba(255,77,36,1)]"><a href="tel:+61736070215">(07) 3607 0215</a></span></p>
       </div>
     </div>
   )
