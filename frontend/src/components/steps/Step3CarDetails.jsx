@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { AlertTriangle, CheckCircle2, Search } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Search, User } from 'lucide-react'
 import BreadcrumbBar from '../BreadcrumbBar'
 import { loadTurnstile, TURNSTILE_SITE_KEY } from '../../lib/turnstile'
 
@@ -613,6 +613,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </div>
           </div>
         )}
+
+        <div className="flex items-center gap-2 mt-1 mb-3 pt-3 border-t border-gray-200">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF4EB]">
+            <User className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2.2} aria-hidden="true" />
+          </span>
+          <h3 className="text-base font-semibold font-display text-[#111]">Your contact details</h3>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>

@@ -133,14 +133,20 @@ body {
   height: 100vh;
 }
 
-@supports (height: 100dvh) {
+/* Use the *small* viewport height so the shell always fits within the visible
+   area even when a mobile browser's toolbars are showing (e.g. iOS Safari or
+   in-app webviews like WhatsApp/Instagram). This keeps the black header pinned
+   at the top and the action footer pinned at the bottom on every step, instead
+   of letting the outer page scroll them out of view. Inside an iframe there are
+   no toolbars, so svh == dvh == the iframe height — the embed is unaffected. */
+@supports (height: 100svh) {
   .app-shell {
-    height: 100dvh;
+    height: 100svh;
   }
 }
 
 .mobile-safe-footer {
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 640px) {

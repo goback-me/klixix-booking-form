@@ -65,7 +65,7 @@ export default function ServiceCard({
         >
             {(serviceImage || isCompact) && (
                 <div
-                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : isWorkshop ? 'rounded-lg flex-shrink-0 bg-white w-full aspect-[2/1]' : isService ? `bg-white rounded-lg ${containerHeight}` : `bg-gray-200 rounded-lg ${containerHeight}`} `}
+                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : isWorkshop ? 'rounded-lg flex-shrink-0 bg-white w-full aspect-[16/6] sm:aspect-[2/1]' : isService ? `bg-white rounded-lg ${containerHeight}` : `bg-gray-200 rounded-lg ${containerHeight}`} `}
                   style={isWorkshop ? { width: '100%' } : {}}
                 >
                     {serviceImage ? (
@@ -102,7 +102,7 @@ export default function ServiceCard({
                     )}
                 </div>
             )}
-                                                <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2.5 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
+                                                <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
                         <span className={`text-[rgba(255,77,36,1)] font-semibold ${isCompact ? 'text-[18px] sm:text-[18px]' : 'text-sm sm:text-lg'} leading-none`}>{servicePrice}</span>
