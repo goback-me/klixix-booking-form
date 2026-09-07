@@ -114,7 +114,7 @@ export default function ServiceCard({
                 </div>
                                                                 {!isCompact && serviceAddress && (
                   <p
-                    className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111]' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
+                    className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111] pointer-events-none' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
                   >
                     <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
                     {serviceAddress}
@@ -122,7 +122,7 @@ export default function ServiceCard({
                 )}
                 {!isCompact && serviceTime && (
                                                                     <p
-                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm text-gray-600'} mb-1`}
+                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] pointer-events-none' : 'flex items-center gap-1.5 text-xs sm:text-sm text-gray-600'} mb-1`}
                                                                     >
                     <Clock size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
@@ -130,7 +130,7 @@ export default function ServiceCard({
                 )}
                 {!isCompact && servicePhone && (
                   <p
-                    className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
+                    className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] pointer-events-none' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
                   >
                     <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {servicePhone}
