@@ -133,15 +133,15 @@ body {
   height: 100vh;
 }
 
-/* Use the *small* viewport height so the shell always fits within the visible
-   area even when a mobile browser's toolbars are showing (e.g. iOS Safari or
-   in-app webviews like WhatsApp/Instagram). This keeps the black header pinned
-   at the top and the action footer pinned at the bottom on every step, instead
-   of letting the outer page scroll them out of view. Inside an iframe there are
-   no toolbars, so svh == dvh == the iframe height — the embed is unaffected. */
-@supports (height: 100svh) {
+/* Track the *dynamic* visible viewport so the shell exactly matches what the
+   browser is showing (accounts for iOS Safari / in-app webview toolbars as
+   they appear and disappear). Combined with the min-h-0 flex chain below, the
+   content scrolls INSIDE the shell while the black header stays pinned at the
+   top and the action footer pinned at the bottom on every step. Inside an
+   iframe there are no toolbars, so dvh == the iframe height — embed unaffected. */
+@supports (height: 100dvh) {
   .app-shell {
-    height: 100svh;
+    height: 100dvh;
   }
 }
 

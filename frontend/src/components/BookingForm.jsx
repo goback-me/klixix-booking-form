@@ -376,7 +376,7 @@ export default function BookingForm({ isVip = false }) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row bg-white w-full h-full min-w-0 overflow-hidden">
+    <div className="flex flex-col lg:flex-row bg-white w-full h-full min-h-0 min-w-0 overflow-hidden">
       <Sidebar
         steps={progressSteps}
         currentStep={sidebarCurrentStep}
@@ -384,7 +384,7 @@ export default function BookingForm({ isVip = false }) {
         completedStepIndexes={/** @type {any} */ (completedStepIndexes)}
         onStepClick={goToStepFromSidebar}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         <StepContent
           step={currentStep}
           onNext={nextStep}
