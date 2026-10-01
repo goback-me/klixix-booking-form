@@ -31,21 +31,11 @@ export default function ServiceCard({
     const serviceInitials = typeof service === 'object' ? service?.initials : null
     const serviceRating = typeof service === 'object' ? service?.rating : null
     const serviceAddress = typeof service === 'object' ? service?.address : null
-    const serviceMapUrl = typeof service === 'object' ? service?.mapUrl : null
     const serviceTime = typeof service === 'object' ? service?.time : null
     const servicePhone = typeof service === 'object' ? service?.phone : null
     const isCompact = variant === 'compact'
     const isWorkshop = variant === 'workshop'
     const isService = variant === 'service'
-
-    // Tap-to-call and map links for workshop cards. Building them here keeps the
-    // display text (e.g. "(07) 3607 0215") separate from the dial string.
-    const telHref = servicePhone ? `tel:${String(servicePhone).replace(/[^\d+]/g, '').replace(/^0/, '+61')}` : null
-    // Prefer an explicit business listing URL so the address opens the actual
-    // Car One place on Google Maps, not just a pin on the street address.
-    const mapHref = serviceMapUrl || (serviceAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(serviceAddress)}` : null)
-    /** A tap on the phone/address link must not also select the card. */
-    const stopCardClick = (/** @type {any} */ e) => e.stopPropagation()
 
     return (
         <motion.div
@@ -75,7 +65,7 @@ export default function ServiceCard({
         >
             {(serviceImage || isCompact) && (
                 <div
-                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : isWorkshop ? 'rounded-lg flex-shrink-0 bg-white w-full aspect-[2/1]' : isService ? `bg-white rounded-lg ${containerHeight}` : `bg-gray-200 rounded-lg ${containerHeight}`} `}
+                  className={`relative overflow-hidden w-full ${isCompact ? `${containerHeight} bg-gray-50 rounded-lg flex items-center justify-center` : isWorkshop ? 'rounded-lg flex-shrink-0 bg-white w-full aspect-[16/6] sm:aspect-[2/1]' : isService ? `bg-white rounded-lg ${containerHeight}` : `bg-gray-200 rounded-lg ${containerHeight}`} `}
                   style={isWorkshop ? { width: '100%' } : {}}
                 >
                     {serviceImage ? (
@@ -112,7 +102,7 @@ export default function ServiceCard({
                     )}
                 </div>
             )}
-                                                <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2.5 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
+                                                <div className={`${isCompact ? 'p-2.5' : isWorkshop ? 'p-2 sm:p-3.5' : 'p-2.5 sm:p-3'} flex-1 flex flex-col min-w-0`}>
                 <div className={`flex ${isCompact ? 'flex-col items-center text-center gap-1.5' : 'items-center justify-between'}`}>
                     {servicePrice && (
                         <span className={`text-[rgba(255,77,36,1)] font-semibold ${isCompact ? 'text-[18px] sm:text-[18px]' : 'text-sm sm:text-lg'} leading-none`}>{servicePrice}</span>
@@ -123,52 +113,28 @@ export default function ServiceCard({
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
                                                                 {!isCompact && serviceAddress && (
-                  isWorkshop && mapHref ? (
-                    <a
-                      href={mapHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={stopCardClick}
-                      className="flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display mb-1 break-words text-[#111] hover:text-[rgba(255,77,36,1)] hover:underline"
-                    >
-                      <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
-                      {serviceAddress}
-                    </a>
-                  ) : (
-                    <p
-                      className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111]' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
-                    >
-                      <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
-                      {serviceAddress}
-                    </p>
-                  )
+                  <p
+                    className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111] pointer-events-none' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
+                  >
+                    <MapPin size={18} className="text-[rgba(255,77,36,1)] shrink-0 mt-0.5" />
+                    {serviceAddress}
+                  </p>
                 )}
                 {!isCompact && serviceTime && (
                                                                     <p
-                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm text-gray-600'} mb-1`}
+                                                                        className={`${isWorkshop ? 'hidden sm:flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] pointer-events-none' : 'flex items-center gap-1.5 text-xs sm:text-sm text-gray-600'} mb-1`}
                                                                     >
                     <Clock size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
                     {serviceTime}
                   </p>
                 )}
                 {!isCompact && servicePhone && (
-                  isWorkshop && telHref ? (
-                    <a
-                      href={telHref}
-                      onClick={stopCardClick}
-                      className="flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] hover:text-[rgba(255,77,36,1)] hover:underline"
-                    >
-                      <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
-                      {servicePhone}
-                    </a>
-                  ) : (
-                    <p
-                      className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111]' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
-                    >
-                      <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
-                      {servicePhone}
-                    </p>
-                  )
+                  <p
+                    className={`${isWorkshop ? 'flex items-center gap-1.5 text-[13px] sm:text-base leading-[1.45] font-display text-[#111] pointer-events-none' : 'flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600'}`}
+                  >
+                    <Phone size={18} className="text-[rgba(255,77,36,1)] shrink-0" />
+                    {servicePhone}
+                  </p>
                 )}
             </div>
         </div>

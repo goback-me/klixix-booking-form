@@ -42,6 +42,9 @@ const QUOTE_PAGE_PATHS = [
   '/spring-service-woolloongabba-g/',
   '/roadworthy-certificate-brisbane/',
   '/european-car-service-brisbane/',
+  '/logbook-service-brisbane/',
+  '/ac-service-new-brisbane/',
+  '/car-mechanic-service-brisbane/',
 ]
 
 const THANK_YOU_URL = 'https://car-one.com.au/thank-you-quote-g/'
@@ -376,7 +379,7 @@ export default function BookingForm({ isVip = false }) {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row bg-white w-full h-full min-w-0 overflow-hidden">
+    <div className="flex flex-col lg:flex-row bg-white w-full h-full min-h-0 min-w-0 overflow-hidden">
       <Sidebar
         steps={progressSteps}
         currentStep={sidebarCurrentStep}
@@ -384,7 +387,7 @@ export default function BookingForm({ isVip = false }) {
         completedStepIndexes={/** @type {any} */ (completedStepIndexes)}
         onStepClick={goToStepFromSidebar}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
         <StepContent
           step={currentStep}
           onNext={nextStep}

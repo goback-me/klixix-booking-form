@@ -133,6 +133,12 @@ body {
   height: 100vh;
 }
 
+/* Track the *dynamic* visible viewport so the shell exactly matches what the
+   browser is showing (accounts for iOS Safari / in-app webview toolbars as
+   they appear and disappear). Combined with the min-h-0 flex chain below, the
+   content scrolls INSIDE the shell while the black header stays pinned at the
+   top and the action footer pinned at the bottom on every step. Inside an
+   iframe there are no toolbars, so dvh == the iframe height — embed unaffected. */
 @supports (height: 100dvh) {
   .app-shell {
     height: 100dvh;
@@ -140,7 +146,7 @@ body {
 }
 
 .mobile-safe-footer {
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 640px) {

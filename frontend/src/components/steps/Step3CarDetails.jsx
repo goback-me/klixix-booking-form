@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { AlertTriangle, CheckCircle2, Search } from 'lucide-react'
-import BreadcrumbBar from '../BreadcrumbBar'
+import { AlertTriangle, CheckCircle2, Search, User } from 'lucide-react'
+import StepHeader from '../StepHeader'
 import { loadTurnstile, TURNSTILE_SITE_KEY } from '../../lib/turnstile'
 
 const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
@@ -14,7 +14,7 @@ function normalizePlate(value) {
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, validationError: any, onGoToStep?: (step: number) => void }} props
  */
-export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onGoToStep, isVip = false }) {
+export default function Step3CarDetails({ bookingData, updateBookingData, validationError, onPrev, onGoToStep, isVip = false }) {
   const details = bookingData.carDetails
 
   const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -332,10 +332,24 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
   return (
     <div className="p-4 sm:p-5 md:p-6 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col">
-        <h2 className="text-2xl md:text-3xl text-[#111] mb-1 break-words">Vehicle &amp; contact details</h2>
-        <p className="text-sm font-display text-[#333] mb-0 break-words">Enter your rego or VIN and we&apos;ll find your vehicle for you.</p>
-        {onGoToStep && <BreadcrumbBar bookingData={bookingData} onGoToStep={onGoToStep} />}
+        <StepHeader
+          title="Vehicle & contact details"
+          subtitle="Enter your rego or VIN and we'll find your vehicle for you."
+          onBack={onPrev}
+          bookingData={bookingData}
+          onGoToStep={onGoToStep}
+        />
 
+        {manualEntry && lookupStatus === 'idle' && !foundVehicle ? (
+          <button
+            type="button"
+            onClick={() => setManualEntry(false)}
+            className="mb-3 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[rgba(255,77,36,1)]"
+          >
+            <Search className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+            Look up my vehicle by rego or VIN instead
+          </button>
+        ) : (
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:p-4 mb-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1" role="tablist" aria-label="Search by rego or VIN">
@@ -363,8 +377,56 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
-            {searchMode === 'vin' && (
+          {searchMode === 'rego' ? (
+            <div>
+              <label className="block text-sm font-medium font-display text-[#111] mb-2">
+                Registration <span className="text-[rgba(255,77,36,1)]">*</span>
+              </label>
+              {/* Plate-style search bar: State + plate + Find in one connected row. */}
+              <div className={`flex items-stretch rounded-xl border bg-white overflow-hidden focus-within:border-[rgba(255,77,36,1)] focus-within:ring-1 focus-within:ring-[rgba(255,77,36,0.4)] ${errorFields.includes('registration') ? 'border-red-400' : 'border-gray-300'}`}>
+                <select
+                  value={details.state}
+                  onChange={(e) => handleIdentityChange('state', e.currentTarget.value)}
+                  aria-label="State"
+                  className="shrink-0 bg-white pl-3 pr-6 py-3 text-sm font-medium text-[#111] border-r border-gray-200 focus:outline-none"
+                >
+                  {AU_STATES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="e.g. ABC123"
+                  value={details.registration}
+                  onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
+                  className="flex-1 min-w-0 px-3 py-3 bg-white text-[#111] placeholder:text-[#ababab] focus:outline-none"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="button"
+                  onClick={handleLookup}
+                  disabled={lookupStatus === 'loading'}
+                  className="shrink-0 px-4 sm:px-5 bg-[rgba(255,77,36,1)] text-white text-sm font-medium hover:bg-[rgba(255,77,36,0.92)] active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 whitespace-nowrap"
+                >
+                  {lookupStatus === 'loading' ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      <span className="hidden sm:inline">Searching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+                      Find
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
               <div className="flex-1 min-w-0">
                 <label className="block text-sm font-medium font-display text-[#111] mb-2">
                   VIN <span className="text-[rgba(255,77,36,1)]">*</span>
@@ -393,58 +455,26 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   </span>
                 </div>
               </div>
-            )}
-            {searchMode === 'rego' && (
-              <>
-                <div className="flex-1 min-w-0">
-                  <label className="block text-sm font-medium font-display text-[#111] mb-2">
-                    Registration <span className="text-[rgba(255,77,36,1)]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ABC123"
-                    value={details.registration}
-                    onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
-                    className={`${inputClass('registration')} bg-white!`}
-                    autoCapitalize="characters"
-                    autoCorrect="off"
-                    spellCheck={false}
-                  />
-                </div>
-                <div className="w-full sm:w-28">
-                  <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
-                  <select
-                    value={details.state}
-                    onChange={(e) => handleIdentityChange('state', e.currentTarget.value)}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-[rgba(255,77,36,1)] bg-white"
-                  >
-                    {AU_STATES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={handleLookup}
-              disabled={lookupStatus === 'loading'}
-              className="w-full sm:w-auto shrink-0 px-6 py-3 bg-[rgba(255,77,36,1)] text-white rounded-xl hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              {lookupStatus === 'loading' ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
-                  Find my vehicle
-                </>
-              )}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleLookup}
+                disabled={lookupStatus === 'loading'}
+                className="w-full sm:w-auto shrink-0 px-6 py-3 bg-[rgba(255,77,36,1)] text-white rounded-xl hover:bg-[rgba(255,77,36,0.92)] hover:shadow-md active:scale-[0.98] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
+              >
+                {lookupStatus === 'loading' ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+                    Find my vehicle
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Turnstile mounts here; it stays empty unless Cloudflare asks the visitor to interact. */}
           {TURNSTILE_SITE_KEY && <div ref={turnstileContainerRef} aria-live="polite" />}
@@ -524,6 +554,39 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </p>
           )}
         </div>
+        )}
+
+        {manualEntry && lookupStatus === 'idle' && !foundVehicle && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+            <div>
+              <label className="block text-sm font-medium font-display text-[#111] mb-2">
+                Registration <span className="text-[rgba(255,77,36,1)]">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. ABC123"
+                value={details.registration}
+                onChange={(e) => handleChange('registration', e.currentTarget.value.toUpperCase())}
+                className={inputClass('registration')}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
+              <select
+                value={details.state}
+                onChange={(e) => handleChange('state', e.currentTarget.value)}
+                className={inputClass('state')}
+              >
+                {AU_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {showVehicleFields && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4">
@@ -570,6 +633,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </div>
           </div>
         )}
+
+        <div className="flex items-center gap-2 mt-1 mb-3 pt-3 border-t border-gray-200">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF4EB]">
+            <User className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2.2} aria-hidden="true" />
+          </span>
+          <h3 className="text-base font-semibold font-display text-[#111]">Your contact details</h3>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
