@@ -42,6 +42,9 @@ const QUOTE_PAGE_PATHS = [
   '/spring-service-woolloongabba-g/',
   '/roadworthy-certificate-brisbane/',
   '/european-car-service-brisbane/',
+  '/logbook-service-brisbane/',
+  '/ac-service-new-brisbane/',
+  '/car-mechanic-service-brisbane/',
 ]
 
 const THANK_YOU_URL = 'https://car-one.com.au/thank-you-quote-g/'
