@@ -47,7 +47,7 @@ const QUOTE_PAGE_PATHS = [
   '/car-mechanic-service-brisbane/',
 ]
 
-const THANK_YOU_URL = 'https://car-one.com.au/thank-you-quote-g/'
+const THANK_YOU_URL = 'https://car-one.com.au/thank-you-booking/'
 
 /**
  * @param {string} dateStr
