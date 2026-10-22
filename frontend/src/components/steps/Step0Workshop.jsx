@@ -50,6 +50,7 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
       time: hoursStatus,
       phone:'(07) 3607 0215',
       image: "./hendra-workshop.webp",
+      imagePos: "center 38%",
     },
     {
       id: 2,
@@ -61,6 +62,7 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
       time: hoursStatus,
       phone:'(07) 3607 0215',
       image: "./woolloongabba-workshop.webp",
+      imagePos: "center 78%",
     },
   ]
 
@@ -81,6 +83,8 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
             containerHeight="aspect-[16/5] min-h-[120px] sm:min-h-[140px] md:min-h-[180px] lg:min-h-[210px] xl:min-h-[240px]"
             imageHeight={320}
             imageWidth={960}
+            imagePosition={service.imagePos || "center 65%"}
+
             index={idx}
             onSelect={() => {
               if (onAutoAdvance) {
