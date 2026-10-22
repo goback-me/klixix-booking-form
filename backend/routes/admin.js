@@ -49,6 +49,9 @@ router.use(adminLimiter, requireAuth)
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
+/** Short, human-friendly ref shown to staff (also the tag in the MechanicDesk note). */
+const refOf = (r) => (r && r.id ? `CARONE-${String(r.id).replace(/-/g, '').slice(0, 8).toUpperCase()}` : '')
+
 function fmtDate(iso) {
   if (!iso) return ''
   try {
@@ -92,6 +95,7 @@ router.get('/', async (req, res) => {
 
   const body = rows.map((r) => `
     <tr>
+      <td class="nowrap"><strong>${esc(refOf(r))}</strong></td>
       <td class="nowrap">${esc(fmtDate(r.created_at))}</td>
       <td>${esc(r.workshop)}</td>
       <td>${esc(r.name)}<div class="sub">${esc(r.email)}</div><div class="sub">${esc(r.phone)}</div></td>
@@ -128,7 +132,7 @@ router.get('/', async (req, res) => {
 <div class="wrap">
   ${error ? `<div class="err">Could not load bookings: ${esc(error)}</div>` : ''}
   <form method="get" action="/admin">
-    <input type="search" name="q" placeholder="Search name, email, phone, rego" value="${esc(q)}" />
+    <input type="search" name="q" placeholder="Search Ref (CARONE-…), name, email, phone, rego" value="${esc(q)}" />
     <select name="workshop"><option value="">All workshops</option>
       <option value="hendra"${workshop === 'hendra' ? ' selected' : ''}>Hendra</option>
       <option value="woolloongabba"${workshop === 'woolloongabba' ? ' selected' : ''}>Woolloongabba</option>
@@ -145,8 +149,8 @@ router.get('/', async (req, res) => {
     <span>${page > 1 ? `<a class="btn secondary" href="/admin?${esc(qp({ page: String(page - 1) }))}">‹ Prev</a>` : ''}
     ${page < totalPages ? `<a class="btn secondary" href="/admin?${esc(qp({ page: String(page + 1) }))}">Next ›</a>` : ''}</span></div>
   <table><thead><tr>
-    <th>Booked at</th><th>Workshop</th><th>Customer</th><th>Vehicle</th><th>Service</th><th>Drop-off</th><th>MechanicDesk</th><th>Source</th>
-  </tr></thead><tbody>${body || '<tr><td colspan="8" class="muted">No bookings found.</td></tr>'}</tbody></table>
+    <th>Ref</th><th>Booked at</th><th>Workshop</th><th>Customer</th><th>Vehicle</th><th>Service</th><th>Drop-off</th><th>MechanicDesk</th><th>Source</th>
+  </tr></thead><tbody>${body || '<tr><td colspan="9" class="muted">No bookings found.</td></tr>'}</tbody></table>
 </div></body></html>`)
 })
 
@@ -162,9 +166,10 @@ router.get('/export.csv', async (req, res) => {
   } catch (e) {
     return res.status(500).send(`Export failed: ${e.message}`)
   }
-  const cols = ['created_at', 'workshop', 'service', 'addons', 'drop_off_time', 'is_flexible', 'name', 'email', 'phone', 'registration_number', 'state', 'make', 'model', 'year', 'vin', 'vip_number', 'note', 'mechanicdesk_status', 'mechanicdesk_ref', 'page_url', 'parent_page_url', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_campaign_id', 'utm_adgroupid', 'ad_id', 'matchtype', 'utm_device', 'utm_geoloc', 'utm_placement', 'utm_network']
+  const cols = ['ref', 'id', 'created_at', 'workshop', 'service', 'addons', 'drop_off_time', 'is_flexible', 'name', 'email', 'phone', 'registration_number', 'state', 'make', 'model', 'year', 'vin', 'vip_number', 'note', 'mechanicdesk_status', 'mechanicdesk_ref', 'page_url', 'parent_page_url', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'utm_campaign_id', 'utm_adgroupid', 'ad_id', 'matchtype', 'utm_device', 'utm_geoloc', 'utm_placement', 'utm_network']
   const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-  const csv = [cols.join(','), ...all.map((r) => cols.map((c) => cell(r[c])).join(','))].join('\r\n')
+  const valueOf = (r, c) => (c === 'ref' ? refOf(r) : r[c])
+  const csv = [cols.join(','), ...all.map((r) => cols.map((c) => cell(valueOf(r, c))).join(','))].join('\r\n')
   res.set('Content-Type', 'text/csv; charset=utf-8')
   res.set('Content-Disposition', `attachment; filename="carone-bookings-${new Date().toISOString().slice(0, 10)}.csv"`)
   res.send(csv)

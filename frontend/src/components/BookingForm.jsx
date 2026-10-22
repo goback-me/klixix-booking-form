@@ -1,7 +1,25 @@
-import { useState, useEffect } from 'preact/hooks'
+import { useState, useEffect, useRef } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId } from '../constants/addons'
+
+/** Reduce any AU phone input to canonical 0-leading digits (handles +61 / 61 forms). */
+export function toAuPhoneDigits(raw) {
+  let s = String(raw || '').replace(/[^\d+]/g, '')
+  if (s.startsWith('+61')) s = '0' + s.slice(3)
+  else if (s.startsWith('61') && s.length === 11) s = '0' + s.slice(2)
+  return s.replace(/\D/g, '')
+}
+
+/** A valid AU number: 10 digits, 0 + a mobile (4) or landline (2/3/7/8) prefix. */
+export function isValidAuPhone(raw) {
+  return /^0[234578]\d{8}$/.test(toAuPhoneDigits(raw))
+}
+
+/** At least a first and last name (two words). */
+function isValidFullName(raw) {
+  return /\S+\s+\S+/.test(String(raw || '').trim())
+}
 
 /**
  * @typedef {{ workshopId: string, name?: string }} Workshop
@@ -31,7 +49,7 @@ import { getAddonLookupByWorkshopId } from '../constants/addons'
  *   carDetails: CarDetails,
  *   extras: number[],
  * }} BookingData
- * @typedef {{ message: string, fields?: string[] }} ValidationError
+ * @typedef {{ message: string, fields?: string[], fieldErrors?: Record<string, string> }} ValidationError
  */
 
 const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
@@ -126,22 +144,26 @@ function validateStep(step, bookingData, isVip = false) {
       if (isVip && !d.vipNumber?.trim()) missing.push('vipNumber')
       if (missing.length) return { message: 'Please fill in all required fields', fields: missing }
 
-      const invalid = []
+      // Each failing field gets its own message so the error points to the right box.
+      const fieldErrors = /** @type {Record<string, string>} */ ({})
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-      if (!emailRegex.test(email)) invalid.push('email')
-
-      const phoneDigits = phone.replace(/\D/g, '')
-      if (phoneDigits.length < 8 || phoneDigits.length > 12) invalid.push('phone')
+      if (!emailRegex.test(email)) fieldErrors.email = 'Please enter a valid email address.'
+      if (!isValidFullName(d.fullName)) fieldErrors.fullName = 'Please enter your first and last name.'
+      if (!isValidAuPhone(phone)) fieldErrors.phone = 'Please enter a valid Australian phone number (e.g. 0412 345 678).'
 
       const yearRegex = /^\d{4}$/
       const yearNumber = Number.parseInt(year, 10)
       const currentYear = new Date().getFullYear()
-      if (!yearRegex.test(year) || yearNumber < 1900 || yearNumber > currentYear + 1) invalid.push('year')
+      if (!yearRegex.test(year) || yearNumber < 1900 || yearNumber > currentYear + 1) {
+        fieldErrors.year = 'Please enter a 4-digit vehicle year.'
+      }
 
+      const invalid = Object.keys(fieldErrors)
       if (invalid.length) {
         return {
-          message: 'Please enter a valid email, phone number, and 4-digit vehicle year.',
+          message: invalid.length === 1 ? fieldErrors[invalid[0]] : 'Please fix the highlighted fields.',
           fields: invalid,
+          fieldErrors,
         }
       }
 
@@ -163,6 +185,22 @@ export default function BookingForm({ isVip = false }) {
   const [parentUrl, setParentUrl] = useState('')
   // Store UTM/ad params from iframe URL
   const [utmParams, setUtmParams] = useState({})
+  // Once a booking succeeds we lock navigation so the progress bar can't be used
+  // to go back and Confirm a second time (prevents double bookings).
+  const [bookingSubmitted, setBookingSubmitted] = useState(false)
+  // Stable id for one booking attempt so a retry / double-click is de-duplicated
+  // on the server instead of creating a second booking.
+  const idempotencyKeyRef = useRef(/** @type {string | null} */ (null))
+  // Synchronous submit lock — React's `submitting` state updates async, so rapid
+  // double/triple-clicks can slip through before it flips. A ref blocks them in
+  // the same tick, so only one request is ever sent.
+  const submitLockRef = useRef(false)
+  if (!idempotencyKeyRef.current) {
+    idempotencyKeyRef.current =
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `bk_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  }
 
   // Broadcast height to parent for inline iframe auto-resize
   useEffect(() => {
@@ -267,7 +305,7 @@ export default function BookingForm({ isVip = false }) {
 
   /** @param {number} targetStep */
   const goToStepFromSidebar = (targetStep) => {
-    if (submitting) return
+    if (submitting || bookingSubmitted) return
 
     const isCurrent = targetStep === sidebarCurrentStep
     const isCompleted = completedStepIndexes.includes(targetStep)
@@ -282,10 +320,18 @@ export default function BookingForm({ isVip = false }) {
     setBookingData(initialBookingData)
     setSubmitError('')
     setValidationError(null)
+    setBookingSubmitted(false)
+    // A fresh booking gets a fresh idempotency key.
+    idempotencyKeyRef.current =
+      (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `bk_${Date.now()}_${Math.random().toString(36).slice(2)}`
   }
 
   /** @param {number[] | undefined} [overrideExtras] */
   const submitBooking = async (overrideExtras) => {
+    if (submitLockRef.current || submitting || bookingSubmitted) return
+    submitLockRef.current = true
     setSubmitting(true)
     setSubmitError('')
 
@@ -299,9 +345,11 @@ export default function BookingForm({ isVip = false }) {
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     effectiveExtras.forEach((id) => {
-      if (addonLookup[id]?.name) {
-        jobTypeNames.push(addonLookup[id].name)
-        selectedAddonNames.push(addonLookup[id].name)
+      const addon = addonLookup[id]
+      // "No Add-ons" is a UI convenience, never a real job/add-on.
+      if (addon?.name && !addon.noAddon) {
+        jobTypeNames.push(addon.name)
+        selectedAddonNames.push(addon.name)
       }
     })
 
@@ -313,7 +361,9 @@ export default function BookingForm({ isVip = false }) {
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
     const vipNote = isVip && carDetails.vipNumber?.trim() ? ` | VIP Number: ${carDetails.vipNumber.trim()}` : ''
     const vinNote = carDetails.vin?.trim() ? ` | VIN: ${carDetails.vin.trim()}` : ''
-    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}`
+    // Make the flexible choice visible to staff, since the drop-off time is still a firm slot.
+    const timingNote = bookingData.isFlexible ? ' | Timing: Flexible (customer happy with any slot)' : ''
+    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}${timingNote}`
 
     // Get parent_url from query string if present
     let parentPageUrl = '';
@@ -343,11 +393,15 @@ export default function BookingForm({ isVip = false }) {
       is_flexible: bookingData.isFlexible || false,
       page_url: pageUrl,
       parent_page_url: parentPageUrl,
+      idempotency_key: idempotencyKeyRef.current,
       ...(isVip ? { vip_number: carDetails.vipNumber?.trim() || '' } : {}),
       ...utmParams,
     }
 
     try {
+      // The webhook is now sent server-side inside create-booking (with the booking
+      // id), so it can't be lost on a quote-page redirect and the endpoint isn't
+      // left open to the public.
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/create-booking`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -359,13 +413,7 @@ export default function BookingForm({ isVip = false }) {
         throw new Error(data.error || 'Booking failed')
       }
 
-      // Fire webhook in background (non-blocking)
-      fetch(`${import.meta.env.VITE_API_URL}/api/send-webhook`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(() => {})
-
+      setBookingSubmitted(true)
       if (isQuotePage) {
         window.top.location.href = THANK_YOU_URL
       } else {
@@ -375,6 +423,9 @@ export default function BookingForm({ isVip = false }) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
       setSubmitting(false)
+      // Release the lock so a genuinely failed submit can be retried; a successful
+      // one is already blocked by bookingSubmitted.
+      submitLockRef.current = false
     }
   }
 

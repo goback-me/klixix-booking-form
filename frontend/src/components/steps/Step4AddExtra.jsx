@@ -41,7 +41,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData, onPrev, 
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-2">
-          {services.map((service, idx) => (
+          {services.filter((service) => !service.noAddon).map((service, idx) => (
             <ServiceCard
               key={service.id}
               service={{ ...service, price: service.priceLabel }}

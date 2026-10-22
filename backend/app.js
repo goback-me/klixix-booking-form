@@ -5,7 +5,6 @@ import rateLimit from 'express-rate-limit'
 import 'dotenv/config'
 import unavailableDaysRouter from './routes/unavailableDays.js'
 import createBookingRouter from './routes/createBooking.js'
-import sendWebhookRouter from './routes/sendWebhook.js'
 import vehicleLookupRouter, { describeEnvironment } from './routes/vehicleLookup.js'
 import adminRouter from './routes/admin.js'
 
@@ -66,7 +65,6 @@ app.get('/', (req, res) => {
 
 app.use('/api', unavailableDaysRouter)
 app.use('/api', createBookingRouter)
-app.use('/api', sendWebhookRouter)
 app.use('/api', vehicleLookupRouter)
 
 // Internal, password-protected admin page for browsing stored bookings.

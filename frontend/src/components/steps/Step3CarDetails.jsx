@@ -31,6 +31,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
   // Snapshot of the last auto-filled values, so we only wipe fields the user hasn't edited.
   const autoFillRef = useRef(/** @type {{ make: string, model: string, year: string, registration?: string } | null} */ (null))
   const lastLookupKeyRef = useRef('')
+  // Always points at the latest form values. The lookup is async, so when it
+  // resolves we must merge the vehicle fields into whatever the customer has
+  // typed *since* (e.g. name/email), not the stale snapshot from when it started.
+  const detailsRef = useRef(details)
+  useEffect(() => { detailsRef.current = details }, [details])
 
   useEffect(() => {
     if (!details.state) {
@@ -265,9 +270,12 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
       const data = await response.json().catch(() => ({}))
 
       if (response.ok && data.found) {
+        // Merge into the CURRENT form state, not the snapshot from when the lookup
+        // began — otherwise a name/email typed during the lookup would be wiped.
+        const current = detailsRef.current
         const fromVin = searchMode === 'vin'
-        const nextRegistration = fromVin && data.plate ? data.plate : details.registration
-        const nextState = fromVin && data.state && AU_STATES.includes(data.state) ? data.state : details.state
+        const nextRegistration = fromVin && data.plate ? data.plate : current.registration
+        const nextState = fromVin && data.state && AU_STATES.includes(data.state) ? data.state : current.state
         autoFillRef.current = {
           make: data.make || '',
           model: data.model || '',
@@ -278,11 +286,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
         setFoundVehicle({ ...data, via: searchMode })
         setLookupStatus('found')
         updateBookingData('carDetails', {
-          ...details,
+          ...current,
           make: data.make || '',
           model: data.model || '',
           year: data.year || '',
-          vin: data.vin || details.vin || '',
+          vin: data.vin || current.vin || '',
           registration: nextRegistration,
           state: nextState,
           colour: data.colour || '',
@@ -313,6 +321,16 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
     `w-full px-4 py-3 border rounded-xl bg-[#f5f5f5] placeholder:text-[#ababab] focus:outline-none focus:border-[rgba(255,77,36,1)] ${
       errorFields.includes(field) ? 'border-red-400' : 'border-[#eee]'
     }`
+
+  /** @type {Record<string, string>} */
+  const fieldErrors = validationError?.fieldErrors || {}
+  /** The specific reason a field is wrong (falls back to a required hint). */
+  const fieldError = (field) => (fieldErrors[field] || (errorFields.includes(field) ? 'This field is required.' : ''))
+  /** @param {string} field */
+  const FieldError = (field) => {
+    const msg = fieldError(field)
+    return msg ? <p className="mt-1.5 text-xs text-red-500">{msg}</p> : null
+  }
 
   const foundSummary = foundVehicle
     ? [foundVehicle.year, foundVehicle.make, foundVehicle.model].filter(Boolean).join(' ')
@@ -601,6 +619,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 onChange={(e) => handleChange('make', e.currentTarget.value)}
                 className={inputClass('make')}
               />
+              {FieldError('make')}
             </div>
 
             <div>
@@ -614,6 +633,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 onChange={(e) => handleChange('model', e.currentTarget.value)}
                 className={inputClass('model')}
               />
+              {FieldError('model')}
             </div>
 
             <div>
@@ -630,6 +650,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 onChange={(e) => handleYearChange(e.currentTarget.value)}
                 className={inputClass('year')}
               />
+              {FieldError('year')}
             </div>
           </div>
         )}
@@ -653,6 +674,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               onChange={(e) => handleChange('fullName', e.currentTarget.value)}
               className={inputClass('fullName')}
             />
+            {FieldError('fullName')}
           </div>
 
           <div>
@@ -666,6 +688,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               onChange={(e) => handleChange('email', e.currentTarget.value)}
               className={inputClass('email')}
             />
+            {FieldError('email')}
           </div>
 
           <div className="md:col-span-2">
@@ -674,11 +697,12 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="tel"
-              placeholder="+61"
+              placeholder="e.g. 0412 345 678"
               value={details.phone}
               onChange={(e) => handleChange('phone', e.currentTarget.value)}
               className={inputClass('phone')}
             />
+            {FieldError('phone')}
           </div>
 
           {isVip && (

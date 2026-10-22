@@ -124,8 +124,22 @@ export async function listBookings({ q, workshop, status, limit = 50, offset = 0
   if (workshop) params.set('workshop', `eq.${safeTerm(workshop)}`)
   if (status) params.set('mechanicdesk_status', `eq.${safeTerm(status)}`)
   if (q) {
-    const t = safeTerm(q)
-    if (t) params.set('or', `(name.ilike.*${t}*,email.ilike.*${t}*,phone.ilike.*${t}*,registration_number.ilike.*${t}*)`)
+    const raw = String(q).trim()
+    // A booking ref (CARONE-99ECC7FA = first 8 hex of the row id) or a full id →
+    // look up the exact row; otherwise fall back to the free-text search.
+    const refHex = raw.replace(/^carone[\s-]*/i, '').trim().toLowerCase()
+    const fullId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(raw.toLowerCase())
+    if (fullId) {
+      params.set('id', `eq.${raw.toLowerCase()}`)
+    } else if (/^[0-9a-f]{8}$/.test(refHex)) {
+      // Match any uuid whose first 8 hex digits equal the ref, via an ordered range.
+      params.append('id', `gte.${refHex}-0000-0000-0000-000000000000`)
+      const next = (BigInt('0x' + refHex) + 1n).toString(16).padStart(8, '0')
+      if (next.length <= 8) params.append('id', `lt.${next}-0000-0000-0000-000000000000`)
+    } else {
+      const t = safeTerm(q)
+      if (t) params.set('or', `(name.ilike.*${t}*,email.ilike.*${t}*,phone.ilike.*${t}*,registration_number.ilike.*${t}*)`)
+    }
   }
   const res = await rest(`${TABLE}?${params.toString()}`, { headers: { Prefer: 'count=exact' } })
   if (!res.ok) throw new Error(`Supabase list failed (${res.status})`)
