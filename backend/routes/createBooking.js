@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { body, validationResult } from 'express-validator'
 import { claimBooking, getBookingByIdemKey, updateBookingState } from '../lib/bookingsStore.js'
 import { sendBookingWebhook } from '../lib/webhook.js'
+import { resolvePostMechanicDesk } from '../lib/mechanicDeskMode.js'
 
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
@@ -184,8 +185,17 @@ function unavailableBody() {
   return { confirmed: false, error: 'Booking is temporarily unavailable. Please try again in a moment or call us.' }
 }
 
-/** Real dependency wiring for processBooking (overridden by unit tests). */
-const realDeps = { claimBooking, getBookingByIdemKey, postMechanicDesk, updateBookingState, sendBookingWebhook }
+/** Real dependency wiring for processBooking (overridden by unit tests).
+ *  postMechanicDesk is resolved per call: the real impl in production, or (only in a
+ *  safely-enabled non-production environment) the deterministic fake adapter. The
+ *  selector fails closed if the fake flag ever appears in production. */
+const realDeps = {
+  claimBooking,
+  getBookingByIdemKey,
+  postMechanicDesk: (token, fields) => resolvePostMechanicDesk(postMechanicDesk)(token, fields),
+  updateBookingState,
+  sendBookingWebhook,
+}
 
 /**
  * Orchestrate one booking attempt. FAIL-CLOSED: MechanicDesk is called ONLY after
