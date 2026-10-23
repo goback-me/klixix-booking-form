@@ -5,7 +5,104 @@ import {
   httpForOutcome,
   responseForExistingRow,
   getMechanicDeskTimeoutMs,
+  processBooking,
 } from '../routes/createBooking.js'
+
+// A fresh set of injectable deps with call-counting spies. Overrides win.
+function makeDeps(overrides = {}) {
+  const calls = { claimBooking: 0, getBookingByIdemKey: 0, postMechanicDesk: 0, updateBookingState: 0, sendBookingWebhook: 0 }
+  const deps = {
+    claimBooking: async () => { calls.claimBooking++; return { configured: true, created: true, row: { id: 'uuid-new', idempotency_key: 'key', booking_state: 'syncing' } } },
+    getBookingByIdemKey: async () => { calls.getBookingByIdemKey++; return null },
+    postMechanicDesk: async () => { calls.postMechanicDesk++; return { ok: true, status: 200, responseData: { booking_id: 'MD-1' } } },
+    updateBookingState: async () => { calls.updateBookingState++ },
+    sendBookingWebhook: async () => { calls.sendBookingWebhook++ },
+  }
+  for (const k of Object.keys(overrides)) {
+    const fn = overrides[k]
+    deps[k] = async (...args) => { calls[k]++; return fn(...args) }
+  }
+  return { deps, calls }
+}
+
+const basePayload = { workshop: 'hendra', name: 'x', phone: '0412345678', email: 'a@b.co' }
+const tick = () => new Promise((r) => setTimeout(r, 0)) // let fire-and-forget .catch handlers run
+
+// ── §1 processBooking: fail-closed atomic claim ─────────────────────────────
+test('§1.1 claim DB outage → 503 and ZERO MechanicDesk calls', async () => {
+  const { deps, calls } = makeDeps({ claimBooking: async () => { throw new Error('supabase down') } })
+  const result = await processBooking({ payload: basePayload, token: 't', idemKey: 'key-1', deps })
+  assert.equal(result.status, 503)
+  assert.equal(result.body.confirmed, false)
+  assert.equal(result.mechanicDeskCalled, false)
+  assert.equal(calls.postMechanicDesk, 0)
+})
+
+test('§1.1b storage not configured → 503 and ZERO MechanicDesk calls', async () => {
+  const { deps, calls } = makeDeps({ claimBooking: async () => ({ configured: false }) })
+  const result = await processBooking({ payload: basePayload, token: 't', idemKey: 'key-1b', deps })
+  assert.equal(result.status, 503)
+  assert.equal(result.mechanicDeskCalled, false)
+  assert.equal(calls.postMechanicDesk, 0)
+})
+
+test('§1.2 unique-key conflict → existing state returned, ZERO MechanicDesk calls', async () => {
+  const { deps, calls } = makeDeps({
+    claimBooking: async () => ({ configured: true, created: false, row: { id: 'uuid-dup', idempotency_key: 'key-2', booking_state: 'confirmed' } }),
+  })
+  const result = await processBooking({ payload: basePayload, token: 't', idemKey: 'key-2', deps })
+  assert.equal(result.reason, 'duplicate')
+  assert.equal(result.status, 200)            // existing row was confirmed
+  assert.equal(result.body.duplicate, true)
+  assert.equal(result.mechanicDeskCalled, false)
+  assert.equal(calls.postMechanicDesk, 0)
+})
+
+test('§1.3 claim ok + MD confirms + final DB update FAILS → confirmed response, stable ref, recovery logged', async () => {
+  const logged = []
+  const origErr = console.error
+  console.error = (...a) => { logged.push(a.join(' ')) }
+  try {
+    const { deps, calls } = makeDeps({
+      claimBooking: async () => ({ configured: true, created: true, row: { id: 'uuid-stable', idempotency_key: 'key-3', booking_state: 'syncing' } }),
+      postMechanicDesk: async () => ({ ok: true, status: 200, responseData: { booking_id: 'MD-3' } }),
+      updateBookingState: async () => { throw new Error('state write failed') },
+    })
+    const result = await processBooking({ payload: basePayload, token: 't', idemKey: 'key-3', deps })
+    await tick()
+    assert.equal(result.status, 200)                         // customer still gets confirmed
+    assert.equal(result.body.confirmed, true)
+    assert.equal(result.body.booking_reference, 'uuid-stable') // stable idempotency reference
+    assert.equal(calls.updateBookingState, 1)
+    assert.ok(logged.some((l) => l.includes('uuid-stable') || l.toLowerCase().includes('reconcil')), 'expected recovery logging')
+  } finally {
+    console.error = origErr
+  }
+})
+
+test('§1.4 claim ok + process fails before MD call → persistent recoverable row, no confirmation', async () => {
+  const { deps, calls } = makeDeps({
+    // Row persisted as 'syncing' (recoverable) by the claim, THEN a crash before/at MD.
+    claimBooking: async () => ({ configured: true, created: true, row: { id: 'uuid-stuck', idempotency_key: 'key-4', booking_state: 'syncing' } }),
+    postMechanicDesk: async () => { throw new Error('process crashed before/at MechanicDesk') },
+  })
+  await assert.rejects(() => processBooking({ payload: basePayload, token: 't', idemKey: 'key-4', deps }))
+  assert.equal(calls.claimBooking, 1)   // the recoverable 'syncing' row was persisted first
+  // No confirmation was produced; the row remains non-terminal for §2 recovery to surface.
+})
+
+test('§1.5 claim ok + MD outcome UNKNOWN (timeout) → 202, no automatic retry (exactly one MD call)', async () => {
+  const { deps, calls } = makeDeps({
+    claimBooking: async () => ({ configured: true, created: true, row: { id: 'uuid-unk', idempotency_key: 'key-5', booking_state: 'syncing' } }),
+    postMechanicDesk: async () => ({ aborted: true }),
+  })
+  const result = await processBooking({ payload: basePayload, token: 't', idemKey: 'key-5', deps })
+  await tick()
+  assert.equal(result.status, 202)
+  assert.equal(result.body.confirmed, false)
+  assert.equal(result.body.state, 'sync_unknown')
+  assert.equal(calls.postMechanicDesk, 1) // NEVER retried — a retry could create a duplicate booking
+})
 
 // ── classifyMechanicDeskOutcome ──────────────────────────────────────────────
 test('MechanicDesk 2xx → confirmed', () => {

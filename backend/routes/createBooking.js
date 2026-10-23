@@ -180,30 +180,96 @@ const validate = [
   }),
 ]
 
+function unavailableBody() {
+  return { confirmed: false, error: 'Booking is temporarily unavailable. Please try again in a moment or call us.' }
+}
+
+/** Real dependency wiring for processBooking (overridden by unit tests). */
+const realDeps = { claimBooking, getBookingByIdemKey, postMechanicDesk, updateBookingState, sendBookingWebhook }
+
+/**
+ * Orchestrate one booking attempt. FAIL-CLOSED: MechanicDesk is called ONLY after
+ * an atomic Supabase claim establishes idempotent ownership. If ownership cannot be
+ * established (DB error / storage unconfigured) we return 503 and never submit.
+ * @returns {Promise<{ status:number, body:object, mechanicDeskCalled:boolean, reason:string }>}
+ */
+export async function processBooking({ payload, token, idemKey, deps = realDeps }) {
+  const d = deps
+
+  // 1) Atomic claim. No ownership → FAIL CLOSED (503), never call MechanicDesk.
+  let claim
+  try {
+    claim = await d.claimBooking(payload, idemKey)
+  } catch (dbError) {
+    console.error('Booking claim failed (DB error) — refusing to submit without idempotent ownership:', dbError?.message || dbError)
+    return { status: 503, body: unavailableBody(), mechanicDeskCalled: false, reason: 'claim_error' }
+  }
+  if (!claim || claim.configured === false) {
+    console.error('Booking storage is not configured — refusing to submit without idempotent ownership.')
+    return { status: 503, body: unavailableBody(), mechanicDeskCalled: false, reason: 'storage_unconfigured' }
+  }
+  if (claim.created === false) {
+    // A concurrent/retried request already owns it → return its state, NEVER call MechanicDesk.
+    const existing = claim.row || await d.getBookingByIdemKey(idemKey)
+    const { status, body } = responseForExistingRow(existing || { idempotency_key: idemKey, booking_state: 'syncing' })
+    return { status, body, mechanicDeskCalled: false, reason: 'duplicate' }
+  }
+
+  // 2) This request owns MechanicDesk submission; the stored row exists.
+  const bookingId = claim.row?.id || null
+  const { workshop, ...bookingFields } = payload
+  const shortRef = bookingId ? `CARONE-${String(bookingId).replace(/-/g, '').slice(0, 8).toUpperCase()}` : null
+  const sourceTag = `[Online booking${shortRef ? ` · ${shortRef}` : ''}]`
+  for (const key of ['note', 'booking_note', 'alert']) {
+    const existing = typeof bookingFields[key] === 'string' && bookingFields[key].trim()
+    bookingFields[key] = existing ? `${sourceTag} ${bookingFields[key]}` : sourceTag
+  }
+
+  const attempt = await d.postMechanicDesk(token, bookingFields)
+  const { state, errorCategory } = classifyMechanicDeskOutcome(attempt)
+  const mechanicdeskRef = attempt.responseData?.booking_id || attempt.responseData?.id || attempt.responseData?.request_id || null
+
+  // Persist the transition. Fire-and-forget: a failed update must NOT change the
+  // customer outcome — it leaves a stale row that recovery surfaces (docs/booking-recovery.md).
+  if (bookingId) {
+    const resp = attempt.responseData || (attempt.error ? { error: String(attempt.error.message || attempt.error).slice(0, 500) } : null)
+    Promise.resolve(d.updateBookingState(bookingId, state, { mechanicdeskRef: mechanicdeskRef ? String(mechanicdeskRef) : null, errorCategory, response: resp }))
+      .catch((e) => console.error(`Booking state update failed for ${shortRef} (state=${state}) — needs reconciliation:`, e?.message || e))
+  }
+  if (state !== 'confirmed') {
+    console.error(`MechanicDesk ${state}${errorCategory ? ` (${errorCategory})` : ''} for ${shortRef || idemKey}`)
+  }
+
+  // 3) Lead webhook (confirmed booking or stored recovery lead). Fire-and-forget.
+  if (bookingId || state === 'confirmed') {
+    Promise.resolve(d.sendBookingWebhook(payload, { bookingId, mechanicdeskRef }))
+      .catch((e) => console.error('Booking webhook error:', e?.message || e))
+  }
+
+  const { status, body } = httpForOutcome({ state, stored: Boolean(bookingId), bookingId, idempotencyKey: idemKey })
+  return { status, body, mechanicDeskCalled: true, reason: state }
+}
+
 router.post('/create-booking', validate, async (req, res) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     return res.status(400).json({ error: errors.array()[0].msg })
   }
 
-  // Normalise the phone once, so the stored row and MechanicDesk get a clean AU number.
+  // Normalise the phone once (stored row + MechanicDesk both get a clean AU number).
   if (req.body.phone) req.body.phone = normalizeAuPhone(req.body.phone)
 
-  // Idempotency key: the client sends a crypto-strong UUID; generate one if absent
-  // so even an old client cannot double-submit unprotected. The DB unique index on
-  // idempotency_key (see migration) is the authoritative cross-instance owner.
+  // Idempotency key: the client sends a crypto-strong UUID; generate one if absent.
   const idemKey = (typeof req.body.idempotency_key === 'string' && req.body.idempotency_key.trim())
     ? req.body.idempotency_key.trim()
     : randomUUID()
   req.body.idempotency_key = idemKey
 
-  const { workshop, ...bookingFields } = req.body
-
+  const workshopId = String(req.body.workshop).toLowerCase()
   const tokenMap = {
     hendra: process.env.HENDRA_TOKEN?.trim(),
     woolloongabba: process.env.WOOLLOONGABBA_TOKEN?.trim(),
   }
-  const workshopId = String(workshop).toLowerCase()
   if (!Object.prototype.hasOwnProperty.call(tokenMap, workshopId)) {
     return res.status(400).json({ error: 'Invalid workshop ID' })
   }
@@ -213,59 +279,8 @@ router.post('/create-booking', validate, async (req, res) => {
     return res.status(500).json({ error: 'Booking is temporarily unavailable. Please call us to book.' })
   }
 
-  // 1) Atomically claim ownership by idempotency_key (store-first). The DB decides
-  //    who owns MechanicDesk submission. A concurrent/retried request loses the
-  //    unique-index race and returns the existing row's state — never re-calling MechanicDesk.
-  let claim
-  try {
-    claim = await claimBooking(req.body, idemKey)
-  } catch (dbError) {
-    // Storage error: proceed best-effort (no stored row, so no cross-instance idempotency).
-    console.error('Booking claim failed (continuing to MechanicDesk without a stored row):', dbError.message)
-    claim = { configured: true, created: true, row: null }
-  }
-  if (claim.configured && claim.created === false) {
-    const existing = claim.row || await getBookingByIdemKey(idemKey)
-    const { status, body } = responseForExistingRow(existing || { idempotency_key: idemKey, booking_state: 'syncing' })
-    return res.status(status).json(body)
-  }
-
-  const bookingId = claim?.row?.id || null
-  const stored = Boolean(bookingId)
-
-  // Tag the MechanicDesk note so staff can see it's from the online form and match
-  // it to our records (short ref from the Supabase id; full id in the DB + webhook).
-  const shortRef = bookingId ? `CARONE-${String(bookingId).replace(/-/g, '').slice(0, 8).toUpperCase()}` : null
-  const sourceTag = `[Online booking${shortRef ? ` · ${shortRef}` : ''}]`
-  for (const key of ['note', 'booking_note', 'alert']) {
-    const existing = typeof bookingFields[key] === 'string' && bookingFields[key].trim()
-    bookingFields[key] = existing ? `${sourceTag} ${bookingFields[key]}` : sourceTag
-  }
-
-  // 2) This request owns MechanicDesk submission (controlled timeout).
-  const attempt = await postMechanicDesk(token, bookingFields)
-  const { state, errorCategory } = classifyMechanicDeskOutcome(attempt)
-  const mechanicdeskRef = attempt.responseData?.booking_id || attempt.responseData?.id || attempt.responseData?.request_id || null
-
-  // Persist the state transition (confirmed | sync_failed | sync_unknown). Never fatal.
-  if (bookingId) {
-    const resp = attempt.responseData || (attempt.error ? { error: String(attempt.error.message || attempt.error).slice(0, 500) } : null)
-    updateBookingState(bookingId, state, { mechanicdeskRef: mechanicdeskRef ? String(mechanicdeskRef) : null, errorCategory, response: resp })
-      .catch((e) => console.error('Booking state update failed:', e.message))
-  }
-  if (state !== 'confirmed') {
-    console.error(`MechanicDesk ${state}${errorCategory ? ` (${errorCategory})` : ''} for ${shortRef || idemKey}`)
-  }
-
-  // 3) Lead webhook server-side (confirmed booking or stored recovery lead). Never throws.
-  if (bookingId || state === 'confirmed') {
-    await sendBookingWebhook(req.body, { bookingId, mechanicdeskRef })
-      .catch((e) => console.error('Booking webhook error:', e?.message || e))
-  }
-
-  // 4) Respond per the success-state contract. Only `confirmed` is conversion-eligible.
-  const { status, body } = httpForOutcome({ state, stored, bookingId, idempotencyKey: idemKey })
-  return res.status(status).json(body)
+  const result = await processBooking({ payload: req.body, token, idemKey })
+  return res.status(result.status).json(result.body)
 })
 
 export default router

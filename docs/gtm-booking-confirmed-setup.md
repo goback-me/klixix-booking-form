@@ -16,7 +16,10 @@
 - (Optional segmentation) duplicate the trigger with a condition `dlv.booking_entry_point equals paid_landing` if you want a paid‑only conversion in addition to the all‑bookings GA4 event.
 
 ## Google Ads conversion tag
-- Conversion ID **`11212284305`**, Label **`htzeCKWp2Y8dEJHDt-Ip`**.
+- **Reuse the EXISTING conversion action** — Conversion ID **`11212284305`**, Label
+  **`htzeCKWp2Y8dEJHDt-Ip`**. Keep its identity unchanged so historical data and bidding stay intact.
+- **Do NOT create a second/new Google Ads "booking" conversion action.** Point the existing one at
+  the new trigger. A duplicate action would split and double‑count conversions.
 - **Transaction ID** = `{{dlv.booking_reference}}`  ← enables Google's duplicate‑conversion dedupe.
 - Fire on the `booking_confirmed` trigger (paid‑only variant if you chose segmentation).
 
@@ -24,8 +27,14 @@
 - Event name `booking_confirmed`; params: `booking_reference`, `workshop`, `service_type`, `booking_entry_point`, `landing_page_type`.
 - Fire on `booking_confirmed` (all confirmed bookings — GA4 can report every entry point).
 
-## Remove the old trigger
-- **Remove / unpublish** the `/thank-you-booking/` **page‑view** trigger from the Ads **and** GA4 tags. It over‑counts (refresh/revisit) and fires on unconfirmed bookings.
+## Remove the old trigger — PRODUCTION CUTOVER ONLY
+- The `/thank-you-booking/` **page‑view** trigger over‑counts (refresh/revisit) and fires on
+  unconfirmed bookings, so it must eventually go.
+- **Timing:** do this **only at the approved production cutover**, as the same published change that
+  activates `booking_confirmed`. Until then (Preview + staging QA) the page‑view trigger stays
+  exactly as it is in the live container — removing it early would break live measurement.
+- At cutover, in one publish: attach the existing conversion action to the `booking_confirmed`
+  trigger **and** detach the `/thank-you-booking/` page‑view trigger from the Ads **and** GA4 tags.
 
 ## Attribution note
 Google Ads only records a conversion when it can match an eligible ad interaction (gclid/gbraid in the cookie), so emitting `booking_confirmed` for *all* confirmed bookings does **not** inflate Ads; `booking_entry_point` lets you segment paid‑landing bookings explicitly.

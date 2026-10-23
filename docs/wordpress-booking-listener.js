@@ -11,6 +11,12 @@
  * No customer PII is ever read or forwarded.
  */
 (function () {
+  // One-time registration guard: if this script is enqueued twice (theme + mu-plugin,
+  // or a cached duplicate), register the listener only once so a confirmed booking can
+  // never push two dataLayer events.
+  if (window.__caroneBookingListenerRegistered) return;
+  window.__caroneBookingListenerRegistered = true;
+
   // Set per environment. Production values shown; use the authorised STAGING origins on staging.
   var EMBED_ORIGIN   = 'https://embed.car-one.com.au';
   var THANK_YOU_URL  = 'https://car-one.com.au/thank-you-booking/';
