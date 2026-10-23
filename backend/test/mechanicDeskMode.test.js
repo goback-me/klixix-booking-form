@@ -1,15 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  isProductionEnv,
   isFakeModeRequested,
   assertFakeModeSafe,
   isFakeModeEnabled,
   resolvePostMechanicDesk,
+  fakeIdentity,
+  supabaseRef,
 } from '../lib/mechanicDeskMode.js'
 
-// Snapshot/restore the env vars this guard reads.
-const KEYS = ['VERCEL_ENV', 'NODE_ENV', 'MECHANICDESK_FAKE', 'MECHANICDESK_FAKE_SCENARIO', 'STAGING_MODE']
+const KEYS = ['VERCEL_ENV', 'NODE_ENV', 'MECHANICDESK_FAKE', 'MECHANICDESK_FAKE_SCENARIO', 'STAGING_MODE',
+  'SUPABASE_URL', 'ALLOWED_ORIGIN', 'VERCEL_PROJECT_PRODUCTION_URL', 'VERCEL_URL', 'SUPABASE_SERVICE_KEY']
 function withEnv(env, fn) {
   const saved = {}
   for (const k of KEYS) saved[k] = process.env[k]
@@ -19,72 +20,90 @@ function withEnv(env, fn) {
     for (const k of KEYS) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k] }
   }
 }
-
 const realImpl = async () => ({ ok: true, status: 200, responseData: { real: true } })
 
-// ── isProductionEnv ──────────────────────────────────────────────────────────
-test('VERCEL_ENV=production → production', () => withEnv({ VERCEL_ENV: 'production' }, () => assert.equal(isProductionEnv(), true)))
-test('VERCEL_ENV=preview → NOT production (even with NODE_ENV=production)', () =>
-  withEnv({ VERCEL_ENV: 'preview', NODE_ENV: 'production' }, () => assert.equal(isProductionEnv(), false)))
-test('VERCEL_ENV=development → NOT production', () => withEnv({ VERCEL_ENV: 'development' }, () => assert.equal(isProductionEnv(), false)))
-test('no VERCEL_ENV + NODE_ENV=production → production (Render/local prod)', () =>
-  withEnv({ NODE_ENV: 'production' }, () => assert.equal(isProductionEnv(), true)))
-test('no env → NOT production', () => withEnv({}, () => assert.equal(isProductionEnv(), false)))
+// The exact, full staging identity.
+const STAGING = {
+  MECHANICDESK_FAKE: '1',
+  STAGING_MODE: '1',
+  SUPABASE_URL: 'https://cwdelnmbawffmfewprzz.supabase.co',
+  VERCEL_PROJECT_PRODUCTION_URL: 'carone-booking-api-staging.vercel.app',
+  ALLOWED_ORIGIN: 'https://carone-booking-form-staging.vercel.app',
+}
 
-// ── fail closed in production ──────────────────────────────────────────────────
-test('fake flag + VERCEL_ENV=production → assertFakeModeSafe THROWS (fail closed)', () =>
-  withEnv({ MECHANICDESK_FAKE: '1', VERCEL_ENV: 'production' }, () => {
-    assert.throws(() => assertFakeModeSafe(), /PRODUCTION/)
-    assert.throws(() => isFakeModeEnabled(), /PRODUCTION/)
-    assert.throws(() => resolvePostMechanicDesk(realImpl), /PRODUCTION/)
+// 1) exact staging identities + fake flag → fake adapter permitted
+test('G1 full staging identity + fake flag → fake PERMITTED (no throw)', async () => {
+  const fn = withEnv({ ...STAGING }, () => {
+    assert.doesNotThrow(() => assertFakeModeSafe())
+    assert.equal(isFakeModeEnabled(), true)
+    return resolvePostMechanicDesk(realImpl)
+  })
+  const out = await fn('t', {})
+  assert.equal(out.responseData.fake, true)
+})
+
+// 2) staging flag + PRODUCTION Supabase → boot failure
+test('G2 staging flag + production Supabase (lhzkznzlpmegoteukkuy) → THROWS', () =>
+  withEnv({ ...STAGING, SUPABASE_URL: 'https://lhzkznzlpmegoteukkuy.supabase.co' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /identity check failed/)
   }))
 
-test('fake flag + NODE_ENV=production (no VERCEL_ENV) → THROWS', () =>
-  withEnv({ MECHANICDESK_FAKE: 'true', NODE_ENV: 'production' }, () => {
-    assert.throws(() => assertFakeModeSafe(), /PRODUCTION/)
+// 3) staging flag + production hostname/project → boot failure
+test('G3 staging flag + production Vercel project URL → THROWS', () =>
+  withEnv({ ...STAGING, VERCEL_PROJECT_PRODUCTION_URL: 'klixix-booking-form.vercel.app' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /not the staging API project/)
+  }))
+test('G3b staging flag + embed.car-one.com.au in ALLOWED_ORIGIN → THROWS', () =>
+  withEnv({ ...STAGING, ALLOWED_ORIGIN: 'https://embed.car-one.com.au' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /production identity/)
   }))
 
-// ── real path unchanged when fake flag absent ──────────────────────────────────
-test('no fake flag + production → resolve returns the REAL impl (identity), no throw', () =>
-  withEnv({ VERCEL_ENV: 'production' }, () => {
+// 4) staging flag + MISSING project identity → boot failure
+test('G4 staging flag + missing/mismatched Vercel identity (on Vercel, wrong host) → THROWS', () =>
+  withEnv({ MECHANICDESK_FAKE: '1', STAGING_MODE: '1', SUPABASE_URL: STAGING.SUPABASE_URL, VERCEL_URL: 'some-other-proj-abc.vercel.app' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /identity check failed/)
+  }))
+test('G4b staging flag + STAGING_MODE missing → THROWS', () =>
+  withEnv({ MECHANICDESK_FAKE: '1', SUPABASE_URL: STAGING.SUPABASE_URL, VERCEL_PROJECT_PRODUCTION_URL: STAGING.VERCEL_PROJECT_PRODUCTION_URL }, () => {
+    assert.throws(() => assertFakeModeSafe(), /STAGING_MODE/)
+  }))
+
+// 5) fake flag on the production Car One project → boot failure
+test('G5 fake flag on production project identity (no staging mode, prod host) → THROWS', () =>
+  withEnv({ MECHANICDESK_FAKE: '1', VERCEL_ENV: 'production', VERCEL_PROJECT_PRODUCTION_URL: 'klixix-booking-form.vercel.app', SUPABASE_URL: 'https://lhzkznzlpmegoteukkuy.supabase.co' }, () => {
+    assert.throws(() => assertFakeModeSafe())
+  }))
+
+// 6) production Supabase reference anywhere in fake mode → boot failure
+test('G6 production Supabase ref present with fake flag → THROWS (configMentionsProduction)', () =>
+  withEnv({ ...STAGING, SUPABASE_URL: 'https://cwdelnmbawffmfewprzz.supabase.co', ALLOWED_ORIGIN: 'https://x.com,https://lhzkznzlpmegoteukkuy.supabase.co' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /production identity/)
+  }))
+
+// 7) fake disabled → real adapter unchanged
+test('G7 no fake flag → real impl returned unchanged (identity), no throw', () =>
+  withEnv({ VERCEL_ENV: 'production', VERCEL_PROJECT_PRODUCTION_URL: 'klixix-booking-form.vercel.app' }, () => {
     assert.doesNotThrow(() => assertFakeModeSafe())
     assert.equal(resolvePostMechanicDesk(realImpl), realImpl)
     assert.equal(isFakeModeRequested(), false)
   }))
 
-test('no fake flag + non-production → still the real impl', () =>
-  withEnv({ VERCEL_ENV: 'preview' }, () => assert.equal(resolvePostMechanicDesk(realImpl), realImpl)))
-
-// ── fake enabled only in non-production ─────────────────────────────────────────
-test('fake flag + VERCEL_ENV=preview → fake adapter used, confirmed scenario', async () => {
-  const fn = withEnv({ MECHANICDESK_FAKE: '1', VERCEL_ENV: 'preview', MECHANICDESK_FAKE_SCENARIO: 'confirmed' }, () => {
-    assert.equal(isFakeModeEnabled(), true)
-    return resolvePostMechanicDesk(realImpl)
-  })
-  assert.notEqual(fn, realImpl)
-  const out = await fn('tok', {})
-  assert.equal(out.ok, true)
-  assert.equal(out.responseData.fake, true)   // proves the FAKE ran, not the real impl
-})
-
-test('fake flag + no env (local dev) → fake adapter used', () =>
-  withEnv({ MECHANICDESK_FAKE: 'yes' }, () => {
-    assert.equal(isFakeModeEnabled(), true)
-    assert.notEqual(resolvePostMechanicDesk(realImpl), realImpl)
+// 8) no secret/key is logged in any failure
+test('G8 failure message contains NO secret value', () =>
+  withEnv({ ...STAGING, SUPABASE_URL: 'https://lhzkznzlpmegoteukkuy.supabase.co', SUPABASE_SERVICE_KEY: 'sb_secret_TOPSECRET_DO_NOT_LEAK' }, () => {
+    try { assertFakeModeSafe(); assert.fail('expected throw') }
+    catch (e) {
+      assert.doesNotMatch(e.message, /TOPSECRET|sb_secret_/)
+    }
   }))
 
-// ── STAGING_MODE override: staging project's prod deployment may run fake ─────────
-test('STAGING_MODE=1 + VERCEL_ENV=production + fake flag → fake ALLOWED (staging on a stable URL)', async () => {
-  const fn = withEnv({ STAGING_MODE: '1', VERCEL_ENV: 'production', MECHANICDESK_FAKE: '1' }, () => {
+// local/CI path (no Vercel identity) still allowed with full staging Supabase + STAGING_MODE
+test('local/CI (no Vercel vars) + staging Supabase + STAGING_MODE + fake → permitted', () =>
+  withEnv({ MECHANICDESK_FAKE: '1', STAGING_MODE: '1', SUPABASE_URL: STAGING.SUPABASE_URL }, () => {
     assert.doesNotThrow(() => assertFakeModeSafe())
     assert.equal(isFakeModeEnabled(), true)
-    return resolvePostMechanicDesk(realImpl)
-  })
-  const out = await fn('tok', {})
-  assert.equal(out.responseData.fake, true)
-})
-
-test('real production (no STAGING_MODE) + fake flag → still THROWS (fail closed)', () =>
-  withEnv({ VERCEL_ENV: 'production', MECHANICDESK_FAKE: '1' }, () => {
-    assert.throws(() => assertFakeModeSafe(), /PRODUCTION/)
   }))
+
+test('supabaseRef parses the project ref', () =>
+  withEnv({ SUPABASE_URL: 'https://cwdelnmbawffmfewprzz.supabase.co' }, () =>
+    assert.equal(supabaseRef(), 'cwdelnmbawffmfewprzz')))
