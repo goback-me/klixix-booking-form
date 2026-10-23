@@ -23,7 +23,7 @@ export const AC_LANDING_PATH = '/ac-service-new-brisbane/'
 
 /** @type {Service[]} */
 export const SERVICES = [
-  { id: 1, value: 'general_service', name: 'General service', badge: 'Most booked', image: './svc-general.png' },
+  { id: 1, value: 'general_service', name: 'General Service', badge: 'Most booked', image: './svc-general.png', priceLabel: 'A$249 incl. GST' },
   { id: 2, value: 'vehicle_repair', name: 'Vehicle repair', image: './svc-vehicle-repair.png' },
   { id: 3, value: 'roadworthy_certificate', name: 'Roadworthy certificate', image: './svc-roadworthy.png' },
   { id: 4, value: 'pre_purchase_inspection', name: 'Pre purchase inspection', image: './svc-prepurchase.png' },
@@ -31,9 +31,9 @@ export const SERVICES = [
     id: 6,
     value: 'air_conditioning_service',
     name: 'Car Air Conditioning Service',
-    image: '/AC re-gas & full service.svg',
+    image: './svc-air-conditioning.png',
     priceLabel: 'A$249 incl. GST',
-    note: 'Inspection first. If a major fault or additional repair is identified, we will provide a separate quotation before proceeding.',
+    note: 'Inspection first. If a major fault or additional repair is identified, we’ll provide a separate quotation before proceeding.',
   },
   { id: 5, value: 'other_enquiry', name: 'Other enquiry', image: './svc-other.png' },
 ]
