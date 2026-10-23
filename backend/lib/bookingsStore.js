@@ -114,6 +114,66 @@ export async function updateBookingSync(id, { status, response, ref }) {
   })
 }
 
+// ── Atomic idempotency: the DB (unique index on idempotency_key) is the single
+//    authoritative owner across instances/restarts. The request whose INSERT
+//    succeeds owns MechanicDesk submission; a loser reads the existing row. ──
+
+/** Map booking_state → the legacy mechanicdesk_status the /admin filters still use. */
+function legacyStatusFor(state) {
+  if (state === 'confirmed') return 'sent'
+  if (state === 'sync_failed' || state === 'sync_unknown') return 'failed'
+  return 'pending' // received | syncing
+}
+
+/**
+ * Atomically claim a booking by idempotency_key.
+ * @returns {Promise<{ configured:boolean, created?:boolean, row?:any }>}
+ *   configured:false  → storage is off (caller treats as storage-failed path)
+ *   created:true      → THIS request owns MechanicDesk submission (row is the new row)
+ *   created:false     → a prior request already owns it (row is the existing row); DO NOT call MechanicDesk
+ */
+export async function claimBooking(payload, idempotencyKey) {
+  if (!isConfigured()) return { configured: false }
+  const row = { ...toRow(payload), idempotency_key: idempotencyKey, booking_state: 'syncing', state_updated_at: new Date().toISOString() }
+  const res = await rest(TABLE, { method: 'POST', body: row, headers: { Prefer: 'return=representation' } })
+  if (res.status === 201) {
+    const rows = await res.json()
+    return { configured: true, created: true, row: Array.isArray(rows) ? rows[0] : rows }
+  }
+  // 409 = unique violation on idempotency_key → a concurrent/retried request already claimed it.
+  if (res.status === 409) {
+    const existing = await getBookingByIdemKey(idempotencyKey)
+    return { configured: true, created: false, row: existing }
+  }
+  throw new Error(`Supabase claim failed (${res.status}): ${(await res.text()).slice(0, 200)}`)
+}
+
+/** Read a booking by its idempotency_key (used by the losing/retry request). */
+export async function getBookingByIdemKey(idempotencyKey) {
+  if (!isConfigured() || !idempotencyKey) return null
+  const res = await rest(`${TABLE}?idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&select=*&limit=1`)
+  if (!res.ok) return null
+  const rows = await res.json()
+  return Array.isArray(rows) && rows[0] ? rows[0] : null
+}
+
+/** Persist a state transition (confirmed | sync_failed | sync_unknown). Never throws fatally. */
+export async function updateBookingState(id, state, { mechanicdeskRef = null, errorCategory = null, response = null } = {}) {
+  if (!id || !isConfigured()) return
+  await rest(`${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: {
+      booking_state: state,
+      state_updated_at: new Date().toISOString(),
+      mechanicdesk_status: legacyStatusFor(state),
+      mechanicdesk_ref: mechanicdeskRef,
+      error_category: errorCategory,
+      mechanicdesk_response: response ?? null,
+      synced_at: state === 'confirmed' ? new Date().toISOString() : null,
+    },
+  })
+}
+
 /** List bookings for the admin page, filtered and paginated. */
 export async function listBookings({ q, workshop, status, limit = 50, offset = 0 } = {}) {
   const params = new URLSearchParams()

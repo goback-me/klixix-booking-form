@@ -4,7 +4,8 @@ import Cross from "../assets/cross.svg"
 export default function Header() {
   const handleClose = () => {
     if (window.parent !== window) {
-      window.parent.postMessage('carone-booking-close', '*')
+      // Prefer the exact parent origin when configured; fall back to '*' only in dev.
+      window.parent.postMessage('carone-booking-close', import.meta.env.VITE_PARENT_ORIGIN || '*')
     }
   }
 

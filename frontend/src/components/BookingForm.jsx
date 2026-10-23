@@ -65,7 +65,10 @@ const QUOTE_PAGE_PATHS = [
   '/car-mechanic-service-brisbane/',
 ]
 
-const THANK_YOU_URL = 'https://car-one.com.au/thank-you-booking/'
+// The parent site now owns the conversion + the thank-you redirect. The iframe
+// only posts a confirmed event to this EXACT origin (never '*'); set per env.
+// Production: https://car-one.com.au ; staging: the authorised staging parent origin.
+const PARENT_ORIGIN = import.meta.env.VITE_PARENT_ORIGIN || ''
 
 /**
  * @param {string} dateStr
@@ -181,6 +184,8 @@ export default function BookingForm({ isVip = false }) {
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  // Truthful "received but not confirmed" notice (HTTP 202) — NOT an error, NOT a conversion.
+  const [submitNotice, setSubmitNotice] = useState('')
   const [validationError, setValidationError] = useState(/** @type {ValidationError | null} */ (null))
   const [parentUrl, setParentUrl] = useState('')
   // Store UTM/ad params from iframe URL
@@ -209,8 +214,21 @@ export default function BookingForm({ isVip = false }) {
     const stepMinHeights = [700, 700, 760, 860, 780, 980]
     const minHeight = stepMinHeights[currentStep] ?? 800
     const height = Math.max(minHeight, window.innerHeight)
-    window.parent.postMessage({ type: 'carone-resize', height }, '*')
+    window.parent.postMessage({ type: 'carone-resize', height }, PARENT_ORIGIN || '*')
   }, [currentStep])
+
+  // Lightweight ack from the parent (protocol completeness). The iframe does NOT
+  // block its UX on this — it already shows the summary on confirmation — but the
+  // ack lets the parent signal it has taken over the conversion/redirect.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !PARENT_ORIGIN) return
+    const onMessage = (e) => {
+      if (e.origin !== PARENT_ORIGIN) return
+      if (e?.data?.type === 'carone_booking_ack') { /* parent handled the conversion */ }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
   // On mount, read UTM/ad params and parent_url from iframe URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -319,6 +337,7 @@ export default function BookingForm({ isVip = false }) {
     setCurrentStep(0)
     setBookingData(initialBookingData)
     setSubmitError('')
+    setSubmitNotice('')
     setValidationError(null)
     setBookingSubmitted(false)
     // A fresh booking gets a fresh idempotency key.
@@ -334,6 +353,7 @@ export default function BookingForm({ isVip = false }) {
     submitLockRef.current = true
     setSubmitting(true)
     setSubmitError('')
+    setSubmitNotice('')
 
     const { workshop, service, date, time, carDetails, extras } = bookingData
     const effectiveExtras = Array.isArray(overrideExtras) ? overrideExtras : extras
@@ -372,6 +392,10 @@ export default function BookingForm({ isVip = false }) {
       parentPageUrl = params.get('parent_url') || '';
     }
     const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+    // Privacy-safe segmentation for analytics (no PII). Entry point lets Ads/GA4
+    // separate paid-landing-page bookings from the rest.
+    const bookingEntryPoint = isQuotePage ? 'paid_landing' : (parentPageUrl ? 'main_site' : 'direct')
+    const landingPageType = isQuotePage ? (QUOTE_PAGE_PATHS.find((p) => parentPageUrl.includes(p)) || 'quote') : 'none'
     // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -408,16 +432,35 @@ export default function BookingForm({ isVip = false }) {
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
+      // 202 = received but NOT confirmed (recovery lead) — a valid, non-error response.
+      if (!response.ok && response.status !== 202) {
         const data = await response.json().catch(() => ({}))
         throw new Error(data.error || 'Booking failed')
       }
+      const data = await response.json().catch(() => ({}))
 
-      setBookingSubmitted(true)
-      if (isQuotePage) {
-        window.top.location.href = THANK_YOU_URL
-      } else {
+      if (data.confirmed === true) {
+        setBookingSubmitted(true)
+        // Confirmed ONLY: notify the parent to fire the conversion. The PARENT owns the
+        // Ads/GA4 push AND the thank-you redirect, so the iframe never navigates
+        // window.top itself (no navigation race, no refresh re-fire).
+        if (window.parent !== window && PARENT_ORIGIN) {
+          window.parent.postMessage({
+            type: 'carone_booking_confirmed',
+            booking_reference: data.booking_reference,
+            workshop: workshop?.workshopId || '',
+            service_type: service?.name || '',
+            booking_entry_point: bookingEntryPoint,
+            landing_page_type: landingPageType,
+          }, PARENT_ORIGIN) // exact origin, never '*'
+        }
+        // Always show our own confirmation summary as the fallback (parent-absent);
+        // if the parent redirects after its tag fires, that replaces this view.
         setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+      } else {
+        // HTTP 202 (sync_failed | sync_unknown): received, not confirmed.
+        // No conversion, no redirect, no summary — a truthful pending notice only.
+        setSubmitNotice('We’ve received your request and will call you shortly to confirm your appointment time.')
       }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
@@ -450,6 +493,7 @@ export default function BookingForm({ isVip = false }) {
           onSkipAndSubmit={() => submitBooking([])}
           submitting={submitting}
           submitError={submitError}
+          submitNotice={submitNotice}
           validationError={validationError}
           bookingData={bookingData}
           updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}

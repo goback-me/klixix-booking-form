@@ -1,10 +1,12 @@
 import { Router } from 'express'
+import { randomUUID } from 'node:crypto'
 import { body, validationResult } from 'express-validator'
-import { insertBooking, updateBookingSync } from '../lib/bookingsStore.js'
+import { claimBooking, getBookingByIdemKey, updateBookingState } from '../lib/bookingsStore.js'
 import { sendBookingWebhook } from '../lib/webhook.js'
 
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
+const MECHANICDESK_URL = 'https://www.mechanicdesk.com.au/booking_requests/create_booking'
 
 /** Reduce an AU phone to canonical 0-leading digits (handles +61 / 61 forms). */
 function toAuPhoneDigits(raw) {
@@ -25,22 +27,78 @@ function normalizeAuPhone(raw) {
   return /^0[234578]\d{8}$/.test(digits) ? digits : String(raw || '').trim()
 }
 
-// Idempotency: a retry / double-click with the same key returns the first result
-// instead of creating a second booking. In-memory is enough on a persistent Node
-// process (Render); each submit carries one key for ~15 min.
-const IDEM_TTL_MS = 15 * 60 * 1000
-const recentBookings = new Map()
-function idemGet(key) {
-  const entry = recentBookings.get(key)
-  if (!entry) return null
-  if (Date.now() - entry.at > IDEM_TTL_MS) { recentBookings.delete(key); return null }
-  return entry.response
+// ──────────────────────────────────────────────────────────────────────────
+// Pure helpers (exported for unit tests — no network/DB).
+// ──────────────────────────────────────────────────────────────────────────
+
+/** Configurable MechanicDesk request timeout (ms), validated. Default 12000. */
+export function getMechanicDeskTimeoutMs() {
+  const parsed = Number.parseInt(String(process.env.MECHANICDESK_TIMEOUT_MS || ''), 10)
+  if (Number.isFinite(parsed) && parsed >= 1000 && parsed <= 60000) return parsed
+  return 12000
 }
-function idemSet(key, response) {
-  recentBookings.set(key, { at: Date.now(), response })
-  if (recentBookings.size > 500) {
-    const now = Date.now()
-    for (const [k, e] of recentBookings) if (now - e.at > IDEM_TTL_MS) recentBookings.delete(k)
+
+/**
+ * Classify a MechanicDesk attempt into a booking_state.
+ *  - 'confirmed'    : HTTP 2xx (MechanicDesk accepted — the only success)
+ *  - 'sync_failed'  : explicit rejection (HTTP non-2xx) or a connection that provably never sent
+ *  - 'sync_unknown' : aborted/timed-out — MechanicDesk MAY have created the booking; outcome indeterminate
+ * @param {{ ok?:boolean, status?:number, aborted?:boolean, networkError?:boolean }} r
+ * @returns {{ state:'confirmed'|'sync_failed'|'sync_unknown', errorCategory:string|null }}
+ */
+export function classifyMechanicDeskOutcome(r) {
+  if (r.aborted) return { state: 'sync_unknown', errorCategory: 'timeout' }
+  if (r.ok) return { state: 'confirmed', errorCategory: null }
+  if (typeof r.status === 'number') {
+    return { state: 'sync_failed', errorCategory: r.status >= 500 ? 'md_5xx' : 'md_rejected' }
+  }
+  // fetch rejected without a response (DNS/refused). Treat as unknown: we cannot
+  // prove MechanicDesk did not receive it, so we must not silently auto-retry.
+  return { state: 'sync_unknown', errorCategory: 'network' }
+}
+
+/**
+ * Map a resolved outcome to the HTTP response (the success-state contract).
+ * `confirmed` is the ONLY state that yields a conversion-eligible success.
+ * @returns {{ status:number, body:object }}
+ */
+export function httpForOutcome({ state, stored, bookingId, idempotencyKey, duplicate = false }) {
+  const booking_reference = bookingId || idempotencyKey || null
+  if (state === 'confirmed') {
+    return { status: 200, body: { confirmed: true, synced: true, stored: Boolean(bookingId), state, booking_reference, booking_id: bookingId || null, ...(duplicate ? { duplicate: true } : {}) } }
+  }
+  if (stored || bookingId) {
+    // Recovery lead (sync_failed | sync_unknown | still syncing). Received, NOT confirmed.
+    return { status: 202, body: { confirmed: false, pending: true, synced: false, stored: true, state, booking_reference, ...(duplicate ? { duplicate: true } : {}) } }
+  }
+  // Nothing stored and not confirmed.
+  return { status: 502, body: { confirmed: false, state: state || 'failed', error: 'We could not submit your booking. Please try again or call us.' } }
+}
+
+/** Translate an existing (duplicate/retry) row into the same contract, never re-calling MechanicDesk. */
+export function responseForExistingRow(row) {
+  const state = row?.booking_state || 'received'
+  return httpForOutcome({ state, stored: true, bookingId: row?.id || null, idempotencyKey: row?.idempotency_key || null, duplicate: true })
+}
+
+/** POST to MechanicDesk with a controlled AbortController timeout (broad runtime support). */
+async function postMechanicDesk(token, bookingFields) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), getMechanicDeskTimeoutMs())
+  try {
+    const response = await fetch(MECHANICDESK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, ...bookingFields }),
+      signal: controller.signal,
+    })
+    let responseData = { ok: response.ok }
+    try { responseData = await response.json() } catch { /* MechanicDesk may return empty */ }
+    return { ok: response.ok, status: response.status, responseData }
+  } catch (error) {
+    return { aborted: error?.name === 'AbortError', networkError: error?.name !== 'AbortError', error }
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -128,16 +186,16 @@ router.post('/create-booking', validate, async (req, res) => {
     return res.status(400).json({ error: errors.array()[0].msg })
   }
 
-  // Normalise the phone once, so both the stored row and MechanicDesk get a clean
-  // AU number (consistent format → SMS works).
+  // Normalise the phone once, so the stored row and MechanicDesk get a clean AU number.
   if (req.body.phone) req.body.phone = normalizeAuPhone(req.body.phone)
 
-  // Idempotency: a retry/double-click with the same key returns the first result.
-  const idemKey = typeof req.body.idempotency_key === 'string' ? req.body.idempotency_key.trim() : ''
-  if (idemKey) {
-    const prior = idemGet(idemKey)
-    if (prior) return res.status(200).json({ ...prior, duplicate: true })
-  }
+  // Idempotency key: the client sends a crypto-strong UUID; generate one if absent
+  // so even an old client cannot double-submit unprotected. The DB unique index on
+  // idempotency_key (see migration) is the authoritative cross-instance owner.
+  const idemKey = (typeof req.body.idempotency_key === 'string' && req.body.idempotency_key.trim())
+    ? req.body.idempotency_key.trim()
+    : randomUUID()
+  req.body.idempotency_key = idemKey
 
   const { workshop, ...bookingFields } = req.body
 
@@ -145,32 +203,38 @@ router.post('/create-booking', validate, async (req, res) => {
     hendra: process.env.HENDRA_TOKEN?.trim(),
     woolloongabba: process.env.WOOLLOONGABBA_TOKEN?.trim(),
   }
-
   const workshopId = String(workshop).toLowerCase()
-
   if (!Object.prototype.hasOwnProperty.call(tokenMap, workshopId)) {
     return res.status(400).json({ error: 'Invalid workshop ID' })
   }
-
   const token = tokenMap[workshopId]
   if (!token) {
     console.error(`Missing MechanicDesk token for workshop '${workshopId}'`)
     return res.status(500).json({ error: 'Booking is temporarily unavailable. Please call us to book.' })
   }
 
-  // 1) Store the booking first, so it is never lost even if MechanicDesk is down.
-  let bookingId = null
+  // 1) Atomically claim ownership by idempotency_key (store-first). The DB decides
+  //    who owns MechanicDesk submission. A concurrent/retried request loses the
+  //    unique-index race and returns the existing row's state — never re-calling MechanicDesk.
+  let claim
   try {
-    bookingId = await insertBooking(req.body)
+    claim = await claimBooking(req.body, idemKey)
   } catch (dbError) {
-    // Storage is best-effort: log loudly but keep going so the customer can still book.
-    console.error('Booking DB insert failed (continuing to MechanicDesk):', dbError.message)
+    // Storage error: proceed best-effort (no stored row, so no cross-instance idempotency).
+    console.error('Booking claim failed (continuing to MechanicDesk without a stored row):', dbError.message)
+    claim = { configured: true, created: true, row: null }
+  }
+  if (claim.configured && claim.created === false) {
+    const existing = claim.row || await getBookingByIdemKey(idemKey)
+    const { status, body } = responseForExistingRow(existing || { idempotency_key: idemKey, booking_state: 'syncing' })
+    return res.status(status).json(body)
   }
 
-  // Tag the MechanicDesk booking so staff can tell it came from the online form
-  // and match it back to our records. Short, readable ref derived from the
-  // Supabase row id (e.g. CARONE-99ECC7FA); the full id still lives in the DB
-  // and the webhook payload for an exact lookup.
+  const bookingId = claim?.row?.id || null
+  const stored = Boolean(bookingId)
+
+  // Tag the MechanicDesk note so staff can see it's from the online form and match
+  // it to our records (short ref from the Supabase id; full id in the DB + webhook).
   const shortRef = bookingId ? `CARONE-${String(bookingId).replace(/-/g, '').slice(0, 8).toUpperCase()}` : null
   const sourceTag = `[Online booking${shortRef ? ` · ${shortRef}` : ''}]`
   for (const key of ['note', 'booking_note', 'alert']) {
@@ -178,51 +242,30 @@ router.post('/create-booking', validate, async (req, res) => {
     bookingFields[key] = existing ? `${sourceTag} ${bookingFields[key]}` : sourceTag
   }
 
-  // 2) Forward to MechanicDesk, then record the outcome against the stored row.
-  let mechanicDeskOk = false
-  let responseData = { ok: true }
-  let mechanicdeskRef = null
-  try {
-    const response = await fetch(
-      'https://www.mechanicdesk.com.au/booking_requests/create_booking',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, ...bookingFields }),
-      }
-    )
+  // 2) This request owns MechanicDesk submission (controlled timeout).
+  const attempt = await postMechanicDesk(token, bookingFields)
+  const { state, errorCategory } = classifyMechanicDeskOutcome(attempt)
+  const mechanicdeskRef = attempt.responseData?.booking_id || attempt.responseData?.id || attempt.responseData?.request_id || null
 
-    if (!response.ok) {
-      const text = await response.text()
-      throw new Error(text || `MechanicDesk returned ${response.status}`)
-    }
-
-    responseData = await response.json().catch(() => ({ ok: true }))
-    mechanicDeskOk = true
-    mechanicdeskRef = responseData?.booking_id || responseData?.id || responseData?.request_id || null
-    updateBookingSync(bookingId, { status: 'sent', response: responseData, ref: mechanicdeskRef ? String(mechanicdeskRef) : null })
-      .catch((e) => console.error('Booking sync-status update failed:', e.message))
-  } catch (error) {
-    console.error('MechanicDesk create booking error:', error.message)
-    updateBookingSync(bookingId, { status: 'failed', response: { error: String(error.message).slice(0, 500) } })
-      .catch((e) => console.error('Booking sync-status update failed:', e.message))
+  // Persist the state transition (confirmed | sync_failed | sync_unknown). Never fatal.
+  if (bookingId) {
+    const resp = attempt.responseData || (attempt.error ? { error: String(attempt.error.message || attempt.error).slice(0, 500) } : null)
+    updateBookingState(bookingId, state, { mechanicdeskRef: mechanicdeskRef ? String(mechanicdeskRef) : null, errorCategory, response: resp })
+      .catch((e) => console.error('Booking state update failed:', e.message))
+  }
+  if (state !== 'confirmed') {
+    console.error(`MechanicDesk ${state}${errorCategory ? ` (${errorCategory})` : ''} for ${shortRef || idemKey}`)
   }
 
-  // 3) Fire the lead webhook server-side (with the booking id) so it can't be lost
-  //    on a quote-page redirect and isn't exposed as a public endpoint. Never throws.
-  if (bookingId || mechanicDeskOk) {
+  // 3) Lead webhook server-side (confirmed booking or stored recovery lead). Never throws.
+  if (bookingId || state === 'confirmed') {
     await sendBookingWebhook(req.body, { bookingId, mechanicdeskRef })
       .catch((e) => console.error('Booking webhook error:', e?.message || e))
   }
 
-  // The request is "received" if it landed anywhere we can act on: the database
-  // (staff will reconcile a failed MechanicDesk sync) or MechanicDesk itself.
-  if (bookingId || mechanicDeskOk) {
-    const result = { ...responseData, stored: Boolean(bookingId), synced: mechanicDeskOk, booking_id: bookingId || undefined }
-    if (idemKey) idemSet(idemKey, result)
-    return res.status(200).json(result)
-  }
-  return res.status(502).json({ error: 'We could not submit your booking. Please try again or call us.' })
+  // 4) Respond per the success-state contract. Only `confirmed` is conversion-eligible.
+  const { status, body } = httpForOutcome({ state, stored, bookingId, idempotencyKey: idemKey })
+  return res.status(status).json(body)
 })
 
 export default router
