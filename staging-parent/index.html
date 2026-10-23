@@ -77,14 +77,30 @@ if (!window.__caroneBookingListenerRegistered) {
     window.dataLayer.push(r.push);
     log('ok', 'dataLayer.push booking_confirmed (LOCAL — no Google request)', r.push);
     ack(event.source, r.ack);
-    if (r.redirect) { log('', 'paid_landing → isolated in-page redirect ' + ISOLATED_THANKYOU); location.hash = ISOLATED_THANKYOU; }
+    if (r.redirect) {
+      // Redirect AFTER the event: mirror the production listener's eventCallback +
+      // bounded fallback. No GTM here, so the bounded setTimeout fallback fires.
+      var done = false;
+      var go = function () { if (!done) { done = true; log('', 'paid_landing → staging thank-you ' + ISOLATED_THANKYOU); location.hash = ISOLATED_THANKYOU; } };
+      window.dataLayer.push({ event: 'booking_confirmed_redirect', eventCallback: go, eventTimeout: 1500 });
+      setTimeout(go, 1800);
+    }
   }, false);
 }
 
 // Auto-embed the staging form.
 iframe = document.createElement('iframe');
 iframe.title = 'Staging booking form';
-iframe.src = FORM_URL + '?parent_url=' + encodeURIComponent(location.href) + '&utm_source=qa_harness';
+// Staging-only paid-landing test: ?scenario=paid (or ?paid=1) makes the harness pass a
+// STAGING parent_url that contains a quote-page path, so the form derives
+// booking_entry_point=paid_landing. The form's own (unchanged) logic then sets
+// landing_page_type to the matched path '/ac-service-new-brisbane/' (the AC-service paid
+// landing). Everything stays on staging — no production host is ever used.
+var qp = new URLSearchParams(location.search);
+var isPaidTest = qp.get('scenario') === 'paid' || qp.get('paid') === '1';
+var parentUrlForForm = isPaidTest ? (location.origin + '/ac-service-new-brisbane/') : location.href;
+if (isPaidTest) log('', 'PAID-LANDING test mode: parent_url=' + parentUrlForForm + ' (entry=paid_landing)');
+iframe.src = FORM_URL + '?parent_url=' + encodeURIComponent(parentUrlForForm) + '&utm_source=qa_harness';
 host.appendChild(iframe);
 log('', 'harness ready — embedded staging form, no production Google tags present');
 </script>
