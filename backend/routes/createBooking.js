@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { body, validationResult } from 'express-validator'
 import { claimBooking, getBookingByIdemKey, updateBookingState } from '../lib/bookingsStore.js'
 import { sendBookingWebhook } from '../lib/webhook.js'
-import { resolvePostMechanicDesk } from '../lib/mechanicDeskMode.js'
+import { resolvePostMechanicDesk, isFakeModeEnabled } from '../lib/mechanicDeskMode.js'
 
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
@@ -283,7 +283,10 @@ router.post('/create-booking', validate, async (req, res) => {
   if (!Object.prototype.hasOwnProperty.call(tokenMap, workshopId)) {
     return res.status(400).json({ error: 'Invalid workshop ID' })
   }
-  const token = tokenMap[workshopId]
+  // In fake mode (non-production staging only) the fake adapter ignores the token,
+  // so a real MechanicDesk credential is NOT required — keeps real tokens unset on
+  // staging. Production (fake off) still fails safe when a token is missing.
+  const token = tokenMap[workshopId] || (isFakeModeEnabled() ? 'staging-fake-no-token' : null)
   if (!token) {
     console.error(`Missing MechanicDesk token for workshop '${workshopId}'`)
     return res.status(500).json({ error: 'Booking is temporarily unavailable. Please call us to book.' })
