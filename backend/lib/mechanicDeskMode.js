@@ -17,16 +17,23 @@ function flagOn(v) {
 }
 
 /**
- * Is this a PRODUCTION environment?
- *  - On Vercel, VERCEL_ENV is authoritative ('production' | 'preview' | 'development');
- *    preview/staging deployments run with NODE_ENV=production, so NODE_ENV alone is
- *    NOT trusted when VERCEL_ENV is present.
- *  - Off Vercel (Render/local), fall back to NODE_ENV==='production'.
+ * Is this an isolated STAGING environment (where the fake adapter may run)?
+ *  - STAGING_MODE=1 is an explicit opt-in so a dedicated staging PROJECT can run its
+ *    own "production" deployment (stable *.vercel.app URL) and still use fake mode.
+ *    Real production never sets STAGING_MODE, so it is never treated as staging.
+ *  - Otherwise: Vercel preview/development are staging; VERCEL_ENV is authoritative.
+ *  - Off Vercel (Render/local), anything but NODE_ENV==='production' is staging.
  */
-export function isProductionEnv() {
+export function isStagingEnv() {
+  if (flagOn(process.env.STAGING_MODE)) return true
   const vercelEnv = String(process.env.VERCEL_ENV || '').trim().toLowerCase()
-  if (vercelEnv) return vercelEnv === 'production'
-  return String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production'
+  if (vercelEnv) return vercelEnv !== 'production'
+  return String(process.env.NODE_ENV || '').trim().toLowerCase() !== 'production'
+}
+
+/** Is this REAL production? (The negation of staging — fake mode is forbidden here.) */
+export function isProductionEnv() {
+  return !isStagingEnv()
 }
 
 /** Was fake MechanicDesk mode requested via env? */

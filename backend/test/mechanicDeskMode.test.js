@@ -9,7 +9,7 @@ import {
 } from '../lib/mechanicDeskMode.js'
 
 // Snapshot/restore the env vars this guard reads.
-const KEYS = ['VERCEL_ENV', 'NODE_ENV', 'MECHANICDESK_FAKE', 'MECHANICDESK_FAKE_SCENARIO']
+const KEYS = ['VERCEL_ENV', 'NODE_ENV', 'MECHANICDESK_FAKE', 'MECHANICDESK_FAKE_SCENARIO', 'STAGING_MODE']
 function withEnv(env, fn) {
   const saved = {}
   for (const k of KEYS) saved[k] = process.env[k]
@@ -71,4 +71,20 @@ test('fake flag + no env (local dev) → fake adapter used', () =>
   withEnv({ MECHANICDESK_FAKE: 'yes' }, () => {
     assert.equal(isFakeModeEnabled(), true)
     assert.notEqual(resolvePostMechanicDesk(realImpl), realImpl)
+  }))
+
+// ── STAGING_MODE override: staging project's prod deployment may run fake ─────────
+test('STAGING_MODE=1 + VERCEL_ENV=production + fake flag → fake ALLOWED (staging on a stable URL)', async () => {
+  const fn = withEnv({ STAGING_MODE: '1', VERCEL_ENV: 'production', MECHANICDESK_FAKE: '1' }, () => {
+    assert.doesNotThrow(() => assertFakeModeSafe())
+    assert.equal(isFakeModeEnabled(), true)
+    return resolvePostMechanicDesk(realImpl)
+  })
+  const out = await fn('tok', {})
+  assert.equal(out.responseData.fake, true)
+})
+
+test('real production (no STAGING_MODE) + fake flag → still THROWS (fail closed)', () =>
+  withEnv({ VERCEL_ENV: 'production', MECHANICDESK_FAKE: '1' }, () => {
+    assert.throws(() => assertFakeModeSafe(), /PRODUCTION/)
   }))
