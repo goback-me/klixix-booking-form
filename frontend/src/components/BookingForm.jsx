@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId } from '../constants/addons'
+import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
 
 /** Reduce any AU phone input to canonical 0-leading digits (handles +61 / 61 forms). */
 export function toAuPhoneDigits(raw) {
@@ -54,16 +55,8 @@ function isValidFullName(raw) {
 
 const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
 
-const QUOTE_PAGE_PATHS = [
-  '/spring-service-hendra-g/',
-  '/pre-purchase-new/',
-  '/spring-service-woolloongabba-g/',
-  '/roadworthy-certificate-brisbane/',
-  '/european-car-service-brisbane/',
-  '/logbook-service-brisbane/',
-  '/ac-service-new-brisbane/',
-  '/car-mechanic-service-brisbane/',
-]
+// QUOTE_PAGE_PATHS now lives in ../constants/services (shared with the service list
+// and the testable conversion-field helper).
 
 // The parent site now owns the conversion + the thank-you redirect. The iframe
 // only posts a confirmed event to this EXACT origin (never '*'); set per env.
@@ -233,7 +226,14 @@ export default function BookingForm({ isVip = false }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      setParentUrl(searchParams.get('parent_url') || '');
+      const pUrl = searchParams.get('parent_url') || '';
+      setParentUrl(pUrl);
+      // Paid AC landing page → preselect the standalone Car Air Conditioning Service
+      // (so the AC purchase is the booked service, not a generic one).
+      if (pUrl.includes(AC_LANDING_PATH)) {
+        const ac = getServiceByValue('air_conditioning_service');
+        if (ac) setBookingData((prev) => (prev.service ? prev : { ...prev, service: ac }));
+      }
       const utmKeys = [
         'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
       ];
@@ -393,9 +393,9 @@ export default function BookingForm({ isVip = false }) {
     }
     const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
     // Privacy-safe segmentation for analytics (no PII). Entry point lets Ads/GA4
-    // separate paid-landing-page bookings from the rest.
-    const bookingEntryPoint = isQuotePage ? 'paid_landing' : (parentPageUrl ? 'main_site' : 'direct')
-    const landingPageType = isQuotePage ? (QUOTE_PAGE_PATHS.find((p) => parentPageUrl.includes(p)) || 'quote') : 'none'
+    // separate paid-landing-page bookings from the rest. serviceType is the STABLE
+    // service value (e.g. air_conditioning_service), not the display name.
+    const { bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
     // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -449,7 +449,7 @@ export default function BookingForm({ isVip = false }) {
             type: 'carone_booking_confirmed',
             booking_reference: data.booking_reference,
             workshop: workshop?.workshopId || '',
-            service_type: service?.name || '',
+            service_type: serviceType,
             booking_entry_point: bookingEntryPoint,
             landing_page_type: landingPageType,
           }, PARENT_ORIGIN) // exact origin, never '*'

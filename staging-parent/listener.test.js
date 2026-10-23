@@ -81,6 +81,17 @@ test('P3 first accept writes the dedupe key before returning push', () => {
   assert.equal(decideBookingMessage(msg(), c).action, 'duplicate')
 })
 
+// ── AC paid journey: stable service_type passes through, 5 fields only, redirect ──
+test('AC paid: service_type air_conditioning_service passes through; exactly 5 payload fields; paid redirect', () => {
+  const r = decideBookingMessage(msg({ service_type: 'air_conditioning_service', booking_entry_point: 'paid_landing', landing_page_type: '/ac-service-new-brisbane/' }), ctx())
+  assert.equal(r.action, 'accept')
+  assert.equal(r.push.service_type, 'air_conditioning_service')
+  assert.equal(r.push.booking_entry_point, 'paid_landing')
+  assert.equal(r.push.landing_page_type, '/ac-service-new-brisbane/')
+  assert.equal(r.redirect, true)
+  assert.deepEqual(Object.keys(r.push).sort(), ['booking_entry_point', 'booking_reference', 'event', 'landing_page_type', 'service_type', 'workshop'])
+})
+
 // ── Phase 7: paid vs non-paid redirect ───────────────────────────────────────
 test('P7.A paid_landing → redirect requested (after push)', () => {
   const r = decideBookingMessage(msg({ booking_entry_point: 'paid_landing' }), ctx())

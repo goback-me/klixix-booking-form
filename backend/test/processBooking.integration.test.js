@@ -169,6 +169,31 @@ test('P4: sync_unknown is never auto-retried', async () => {
   assert.equal(r2.reason, 'duplicate')
 })
 
+// AC: both workshops → confirmed; fake MechanicDesk payload identifies the AC service; no conversion
+test('P-AC: AC booking (both workshops) → confirmed; MD payload keeps "Car Air Conditioning Service"', async () => {
+  for (const workshop of ['hendra', 'woolloongabba']) {
+    const store = makeMemoryStore()
+    let seen = null
+    const deps = {
+      claimBooking: store.claimBooking.bind(store),
+      getBookingByIdemKey: store.getBookingByIdemKey,
+      postMechanicDesk: async (t, f) => { seen = f; return makeFakeMechanicDesk({ scenario: 'confirmed' })(t, f) },
+      updateBookingState: store.updateBookingState,
+      sendBookingWebhook: async () => {},
+    }
+    const payload = {
+      workshop, name: 'INTERNAL QA TEST - DO NOT SERVICE', phone: '0412345678', email: 'qa@example.test',
+      registration_number: 'QAAC', job_type_names: ['Car Air Conditioning Service'],
+      note: 'Service: Car Air Conditioning Service',
+    }
+    const r = await processBooking({ payload, token: 't', idemKey: `ac-${workshop}`, deps })
+    assert.equal(r.body.confirmed, true, `${workshop} confirmed`)
+    assert.ok(seen.job_type_names.includes('Car Air Conditioning Service'), `${workshop} MD payload identifies AC`)
+    // Not silently converted to a generic service.
+    assert.equal(/general_service|other_enquiry/i.test(JSON.stringify(seen.job_type_names)), false)
+  }
+})
+
 // 9) No customer PII in response bodies
 test('P4: response body carries no customer PII', async () => {
   const store = makeMemoryStore()

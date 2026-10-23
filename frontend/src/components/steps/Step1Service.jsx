@@ -1,39 +1,13 @@
 import ServiceCard from '../ServiceCard'
 import StepHeader from '../StepHeader'
+import { SERVICES } from '../../constants/services'
 
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, onAutoAdvance?: (key: string, value: any) => void, onPrev?: () => void, onGoToStep?: (step: number) => void }} props
  */
 export default function Step1Service({ bookingData, updateBookingData, onAutoAdvance, onPrev, onGoToStep }) {
 
-  const services = [
-    {
-      id: 1,
-      name: 'General service',
-      badge: 'Most booked',
-      image: './svc-general.png',
-    },
-    {
-      id: 2,
-      name: 'Vehicle repair',
-      image: './svc-vehicle-repair.png',
-    },
-    {
-      id: 3,
-      name: 'Roadworthy certificate',
-      image: './svc-roadworthy.png',
-    },
-    {
-      id: 4,
-      name: 'Pre purchase inspection',
-      image: './svc-prepurchase.png',
-    },
-    {
-      id: 5,
-      name: 'Other enquiry',
-      image: './svc-other.png',
-    },
-  ]
+  const services = SERVICES
 
   return (
     <div className="p-2.5 sm:p-4 md:p-5 flex flex-col min-w-0">

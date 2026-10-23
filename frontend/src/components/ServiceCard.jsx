@@ -112,6 +112,12 @@ export default function ServiceCard({
                     </h3>
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
+                {isService && (service?.priceLabel || service?.note) && (
+                  <div className="mt-1">
+                    {service?.priceLabel && <p className="text-xs sm:text-sm font-semibold text-[rgba(255,77,36,1)]">{service.priceLabel}</p>}
+                    {service?.note && <p className="text-[11px] sm:text-xs leading-snug text-gray-600 mt-0.5">{service.note}</p>}
+                  </div>
+                )}
                                                                 {!isCompact && serviceAddress && (
                   <p
                     className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111] pointer-events-none' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}
