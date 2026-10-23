@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CarOne — Staging Parent (QA only)</title>
+<!--
+  ISOLATED STAGING PARENT. Not WordPress, not production. Auto-embeds the STAGING
+  booking form, runs the proposed parent listener, validates origin + event source,
+  logs every dataLayer push on-screen, and "redirects" in-page only.
+  CONTAINS NO PRODUCTION GOOGLE TAGS — dataLayer is a local array this page owns, so a
+  confirmed booking fires nothing to Google.
+-->
+<style>
+  :root { --fg:#111; --bg:#fff; --muted:#666; --line:#e3e3e3; --accent:#ff4d24; --ok:#0a7d32; --warn:#b26a00; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --fg:#e8e8e8; --bg:#141414; --muted:#9a9a9a; --line:#2a2a2a; } }
+  *{box-sizing:border-box} body{margin:0;font:15px/1.5 system-ui,sans-serif;color:var(--fg);background:var(--bg)}
+  header{padding:12px 16px;border-bottom:1px solid var(--line)} header b{color:var(--accent)}
+  .wrap{display:grid;grid-template-columns:1fr 420px;gap:16px;padding:16px}
+  @media (max-width:860px){.wrap{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0}
+  .panel h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  iframe{width:100%;height:680px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  #log{font:12px/1.45 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;max-height:620px;overflow:auto}
+  .evt{padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+  .evt.ok{border-color:var(--ok)} .evt.warn{border-color:var(--warn)}
+  code{background:rgba(127,127,127,.15);padding:0 4px;border-radius:4px}
+</style>
+</head>
+<body>
+<header><b>CarOne staging parent</b> — isolated · fake MechanicDesk · no production Google tags · in-page redirect only</header>
+<div class="wrap">
+  <div class="panel">
+    <h2>Embedded staging booking form</h2>
+    <p style="font-size:12px;color:var(--muted)">Form origin: <code id="org"></code></p>
+    <div id="host"></div>
+  </div>
+  <div class="panel">
+    <h2>dataLayer inspector (local — fires nothing to Google)</h2>
+    <div id="log"></div>
+  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  // STAGING origins (stable *.vercel.app). No production hosts.
+  var FORM_URL = 'https://carone-booking-form-staging.vercel.app';
+  var EMBED_ORIGIN = FORM_URL;
+  var ISOLATED_THANKYOU = '#thank-you-test';
+
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var ALLOWED_WORKSHOPS = ['hendra','woolloongabba'];
+  var ALLOWED_ENTRY = ['paid_landing','main_site','direct','gbp','other_embed'];
+
+  window.dataLayer = window.dataLayer || [];
+  var logEl = document.getElementById('log');
+  var host = document.getElementById('host');
+  document.getElementById('org').textContent = EMBED_ORIGIN;
+  var iframe = null;
+
+  function log(kind,title,obj){
+    var d=document.createElement('div'); d.className='evt'+(kind?' '+kind:'');
+    d.textContent='['+new Date().toISOString().slice(11,19)+'] '+title+(obj?'\n'+JSON.stringify(obj,null,2):'');
+    logEl.prepend(d);
+  }
+  function normaliseService(s){return String(s||'').trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,60);}
+  function ack(src,ref){try{src.postMessage({type:'carone_booking_ack',booking_reference:ref},EMBED_ORIGIN);}catch(e){}}
+
+  if(!window.__caroneBookingListenerRegistered){
+    window.__caroneBookingListenerRegistered=true;
+    window.addEventListener('message',function(event){
+      if(event.data&&(event.data.type==='carone-resize'||event.data==='carone-booking-close')){
+        log('','chrome signal',typeof event.data==='string'?{data:event.data}:event.data); return;
+      }
+      if(event.origin!==EMBED_ORIGIN){log('warn','rejected: wrong origin',{got:event.origin,want:EMBED_ORIGIN});return;}
+      var d=event.data;
+      if(!d||d.type!=='carone_booking_confirmed')return;
+      if(!iframe||event.source!==iframe.contentWindow){log('warn','rejected: event.source not the booking iframe');return;}
+      var ref=String(d.booking_reference||'');
+      if(!UUID_RE.test(ref)){log('warn','rejected: malformed booking_reference');return;}
+      var workshop=String(d.workshop||'');
+      if(ALLOWED_WORKSHOPS.indexOf(workshop)===-1){log('warn','rejected: unknown workshop',{workshop:workshop});return;}
+      var entry=String(d.booking_entry_point||'direct');
+      if(ALLOWED_ENTRY.indexOf(entry)===-1)entry='other_embed';
+      var service=normaliseService(d.service_type);
+      var KEY='carone_booked_'+ref;
+      try{ if(sessionStorage.getItem(KEY)){log('ok','duplicate acked, NOT re-pushed',{ref:ref});ack(event.source,ref);return;} sessionStorage.setItem(KEY,'1'); }catch(e){}
+      window.dataLayer.push({event:'booking_confirmed',booking_reference:ref,workshop:workshop,service_type:service,booking_entry_point:entry,landing_page_type:String(d.landing_page_type||'none')});
+      log('ok','dataLayer.push booking_confirmed (LOCAL — no Google request)',window.dataLayer[window.dataLayer.length-1]);
+      ack(event.source,ref);
+      if(entry==='paid_landing'){ log('','paid_landing → isolated in-page redirect '+ISOLATED_THANKYOU); location.hash=ISOLATED_THANKYOU; }
+    },false);
+  }
+
+  // Auto-embed the staging form.
+  iframe=document.createElement('iframe');
+  iframe.title='Staging booking form';
+  iframe.src=FORM_URL+'?parent_url='+encodeURIComponent(location.href)+'&utm_source=qa_harness';
+  host.appendChild(iframe);
+  log('','harness ready — embedded staging form, no production Google tags present');
+})();
+</script>
+</body>
+</html>
