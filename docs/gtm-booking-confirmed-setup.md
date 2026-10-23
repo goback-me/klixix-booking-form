@@ -2,6 +2,20 @@
 
 **FOR THE ANALYTICS OWNER — configure in PREVIEW ONLY. Do not publish until QA + Jai sign‑off.**
 
+## Preview-phase boundaries (this phase)
+- **Do NOT publish** the container. Preview/Tag Assistant only.
+- **Do NOT fire production Google Ads or GA4 from staging.** Point any test tag at a *separate test*
+  conversion action/label, or block the Ads/GA4 tags with a staging exception. The production
+  Ads action `AW-11212284305` / GA4 `G-4K9TEQS2N4` must not receive staging traffic.
+- **GTM Preview is NOT proof of analytics isolation** — Preview still transmits real hits. Isolation
+  was proven separately at the served-asset level (no tracker in the staging bundles).
+- **Do NOT create a second/duplicate Google Ads "booking" conversion action.** Reuse the existing
+  one; keep its identity for the eventual cutover.
+- `transaction_id` = `{{dlv.booking_reference}}` (Google dedupe).
+- **Keep the current `/thank-you-booking/` page‑view trigger ACTIVE** until the separately approved
+  production cutover — do not remove it during Preview/staging work.
+- Do not run real MechanicDesk bookings as part of GTM testing.
+
 ## Variables (Data Layer Variables)
 | Name | Data Layer key |
 |---|---|

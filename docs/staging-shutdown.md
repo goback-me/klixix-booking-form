@@ -31,9 +31,52 @@ cd ../staging-parent && vercel remove carone-booking-parent-staging --yes
 
 ## Neutralise without deleting
 - Disable fake bookings: in `carone-booking-api-staging` env, remove `MECHANICDESK_FAKE` → the API
-  fails closed (503) on every booking.
-- Drop the staging DB data: in Supabase `cwdelnmbawffmfewprzz` SQL editor:
-  `delete from public.bookings;` (synthetic QA rows only).
+  fails closed on every booking.
+
+## Synthetic-QA cleanup (staging only, evidence-preserving — NEVER a blanket delete)
+
+Do **not** run `delete from public.bookings;`. Use this scoped, guarded procedure in the
+Supabase SQL editor, in order:
+
+**Step 1 — identity.** Confirm the dashboard URL reads `/project/cwdelnmbawffmfewprzz/`.
+If it shows `lhzkznzlpmegoteukkuy`, **STOP** — run nothing below.
+
+**Step 2 — preserve the evidence ledger (save this output before any delete):**
+```sql
+select id, booking_state, idempotency_key, created_at, left(coalesce(note,''),40) as note_prefix
+from public.bookings
+where note ilike '%INTERNAL QA TEST%' or name ilike '%DO NOT SERVICE%'
+order by created_at;
+```
+
+**Step 3 — preview the exact deletion set (review before deleting):**
+```sql
+select id, booking_state, created_at
+from public.bookings
+where note ilike '%INTERNAL QA TEST%' or name ilike '%DO NOT SERVICE%'
+order by created_at;
+```
+
+**Step 4 — guarded delete (only labelled QA rows; auto-refuses on a production-looking DB):**
+```sql
+do $$
+declare qa int; total int;
+begin
+  select count(*) into total from public.bookings;
+  select count(*) into qa from public.bookings
+    where note ilike '%INTERNAL QA TEST%' or name ilike '%DO NOT SERVICE%';
+  -- Refuse if many non-QA rows exist (this would not be the synthetic staging DB).
+  if (total - qa) > 50 then
+    raise exception 'ABORT: % non-QA rows present — this does not look like the synthetic staging DB', total - qa;
+  end if;
+  delete from public.bookings
+    where note ilike '%INTERNAL QA TEST%' or name ilike '%DO NOT SERVICE%';
+  raise notice 'Deleted % synthetic QA rows (of % total). Non-QA rows untouched.', qa, total;
+end $$;
+```
+This only ever removes rows positively labelled `INTERNAL QA TEST — DO NOT SERVICE`, leaves every
+other row untouched, and aborts automatically if the connected DB holds unexpected non-QA data
+(e.g. production's real bookings).
 
 ## Notes / limitations
 - **`noindex` is not security** — it only asks crawlers not to index. Real access control requires
