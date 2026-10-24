@@ -39,6 +39,19 @@ export const GABBA_ADDONS = [
 ]
 
 /**
+ * Conditional add-on: the standalone Air Conditioning Service offered as an ADDITIONAL
+ * service when the chosen primary service is NOT already Air Conditioning Service.
+ * No price, no description — just the B&W image and label. Stable id air_conditioning_service.
+ * @type {Addon & { value: string }}
+ */
+export const AC_ADDON = {
+  id: 900,
+  value: 'air_conditioning_service',
+  name: 'Air Conditioning Service',
+  image: './svc-air-conditioning.png',
+}
+
+/**
  * @param {string | undefined} workshopId
  * @returns {Addon[]}
  */
@@ -47,12 +60,42 @@ export function getAddonsByWorkshopId(workshopId) {
 }
 
 /**
+ * The add-on list to show for a given primary service: the A/C add-on is prepended
+ * unless the primary service IS Air Conditioning Service (then it's hidden, so it can
+ * never duplicate the primary).
+ * @param {string | undefined} workshopId
+ * @param {string | undefined} primaryServiceValue
+ * @returns {Addon[]}
+ */
+export function addonsForPrimary(workshopId, primaryServiceValue) {
+  const base = getAddonsByWorkshopId(workshopId)
+  return primaryServiceValue === 'air_conditioning_service' ? base : [AC_ADDON, ...base]
+}
+
+/**
+ * Apply the A/C-add-on de-duplication rule to a booking-data update: when the primary
+ * service becomes Air Conditioning Service, drop the A/C add-on from the selected extras.
+ * Pure — returns the next booking-data object.
+ * @param {any} prev @param {string} key @param {any} value
+ */
+export function applyAcAddonRule(prev, key, value) {
+  const next = { ...prev, [key]: value }
+  if (key === 'service' && value && value.value === 'air_conditioning_service' && Array.isArray(prev.extras)) {
+    next.extras = prev.extras.filter((/** @type {number} */ id) => id !== AC_ADDON.id)
+  }
+  return next
+}
+
+/**
  * @param {string | undefined} workshopId
  * @returns {Record<number, Addon>}
  */
 export function getAddonLookupByWorkshopId(workshopId) {
-  return getAddonsByWorkshopId(workshopId).reduce((acc, addon) => {
+  const lookup = getAddonsByWorkshopId(workshopId).reduce((acc, addon) => {
     acc[addon.id] = addon
     return acc
   }, /** @type {Record<number, Addon>} */ ({}))
+  // Always resolvable so a selected A/C add-on reaches job_type_names / the record.
+  lookup[AC_ADDON.id] = AC_ADDON
+  return lookup
 }

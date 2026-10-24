@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
-import { getAddonLookupByWorkshopId } from '../constants/addons'
+import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
 import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
 
 /** Reduce any AU phone input to canonical 0-leading digits (handles +61 / 61 forms). */
@@ -272,7 +272,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const updateBookingData = (key, value) => {
-    setBookingData((prev) => ({ ...prev, [key]: value }))
+    setBookingData((prev) => withAcAddonRule(prev, key, value))
     setValidationError(null)
   }
 
@@ -307,7 +307,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const autoAdvanceWithSelection = (key, value) => {
-    setBookingData((prev) => ({ ...prev, [key]: value }))
+    setBookingData((prev) => withAcAddonRule(prev, key, value))
     setValidationError(null)
     // Delay auto-advance to Step 2 to allow prefetch to complete
     const delay = key === 'service' ? 350 : 0
