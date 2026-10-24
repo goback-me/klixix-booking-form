@@ -49,6 +49,8 @@ export const AC_ADDON = {
   value: 'air_conditioning_service',
   name: 'Air Conditioning Service',
   image: './svc-air-conditioning.png',
+  price: 249,
+  priceLabel: '$249.00',
 }
 
 /**

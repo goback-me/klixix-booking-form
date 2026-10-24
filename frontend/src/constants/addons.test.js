@@ -8,7 +8,7 @@ test('AC add-on: label + stable value + image, and NO price/description', () => 
   assert.equal(AC_ADDON.value, 'air_conditioning_service')
   assert.equal(AC_ADDON.name, 'Air Conditioning Service')
   assert.match(AC_ADDON.image, /svc-air-conditioning\.png$/)
-  assert.equal('priceLabel' in AC_ADDON, false)
+  assert.equal(AC_ADDON.priceLabel, '$249.00')
   assert.equal('note' in AC_ADDON, false)
 })
 
