@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
 import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
+import { noticeForPendingState } from '../constants/notices'
 
 /** Reduce any AU phone input to canonical 0-leading digits (handles +61 / 61 forms). */
 export function toAuPhoneDigits(raw) {
@@ -459,8 +460,8 @@ export default function BookingForm({ isVip = false }) {
         setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
       } else {
         // HTTP 202 (sync_failed | sync_unknown): received, not confirmed.
-        // No conversion, no redirect, no summary — a truthful pending notice only.
-        setSubmitNotice('We’ve received your request and will call you shortly to confirm your appointment time.')
+        // No conversion, no redirect, no summary — a truthful, state-specific notice only.
+        setSubmitNotice(noticeForPendingState(data.state))
       }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
