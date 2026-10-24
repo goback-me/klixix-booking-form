@@ -23,7 +23,6 @@ export default function ServiceCard({
     variant = 'default',
     index = 0,
     imagePosition = 'top',
-    showPrice = false,
 }) {
     // Handle both string and object formats
     const serviceName = typeof service === 'string' ? service : service?.name
@@ -113,16 +112,6 @@ export default function ServiceCard({
                     </h3>
                     {!isCompact && serviceRating && <span className="text-xs sm:text-sm"> ⭐ {serviceRating}</span>}
                 </div>
-                {isService && showPrice && (service?.priceLabel || service?.note) && (
-                  <div className="mt-1 flex flex-col items-start gap-1">
-                    {service?.priceLabel && (
-                      <span className="inline-block rounded-full bg-[rgba(255,77,36,0.1)] text-[rgba(226,60,23,1)] text-xs font-semibold px-2.5 py-0.5">
-                        {service.priceLabel}
-                      </span>
-                    )}
-                    {service?.note && <p className="text-[11px] sm:text-xs leading-snug text-gray-600">{service.note}</p>}
-                  </div>
-                )}
                                                                 {!isCompact && serviceAddress && (
                   <p
                     className={`${isWorkshop ? 'flex items-start gap-1.5 text-[13px] sm:text-base leading-[1.45] line-clamp-1 mt-1 font-display text-[#111] pointer-events-none' : 'flex items-start gap-1.5 text-xs sm:text-sm line-clamp-2 text-gray-600'} mb-1 break-words`}

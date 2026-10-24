@@ -110,7 +110,6 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
                 onPrev={onPrev}
                 onGoToStep={onGoToStep}
                 isVip={isVip}
-                isQuotePage={isQuotePage}
               />
             </motion.div>
           </AnimatePresence>

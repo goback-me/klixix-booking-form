@@ -5,12 +5,9 @@ import { SERVICES } from '../../constants/services'
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, onAutoAdvance?: (key: string, value: any) => void, onPrev?: () => void, onGoToStep?: (step: number) => void }} props
  */
-export default function Step1Service({ bookingData, updateBookingData, onAutoAdvance, onPrev, onGoToStep, isQuotePage }) {
+export default function Step1Service({ bookingData, updateBookingData, onAutoAdvance, onPrev, onGoToStep }) {
 
   const services = SERVICES
-  // Om: A$249 is a SPECIAL landing-page price, not the normal price — only paid-landing
-  // visitors see it. Main-site/direct customers see no price on the cards.
-  const showPrice = Boolean(isQuotePage)
 
   return (
     <div className="p-2.5 sm:p-4 md:p-5 flex flex-col min-w-0">
@@ -28,7 +25,6 @@ export default function Step1Service({ bookingData, updateBookingData, onAutoAdv
                   key={service.id}
                   service={service}
                   variant="service"
-                  showPrice={showPrice}
                   selected={bookingData.service?.id === service.id}
                   onSelect={() => {
                     if (onAutoAdvance) {

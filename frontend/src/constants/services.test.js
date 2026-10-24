@@ -9,13 +9,12 @@ test('AC is a top-level service (shared list → available at both workshops)', 
   assert.ok(AC, 'AC service exists')
   assert.equal(AC.name, 'Air Conditioning Service')
   assert.equal(AC.value, 'air_conditioning_service')
-  assert.equal(AC.priceLabel, 'A$249 incl. GST')
-  assert.match(AC.note, /Inspection first/)
 })
 
-test('approved wording excludes forbidden claims', () => {
-  for (const bad of [/refrigerant/i, /warranty/i, /mobile/i, /all makes/i, /all models/i, /same.?day/i]) {
-    assert.doesNotMatch(AC.note, bad, `must not mention ${bad}`)
+test('the form carries NO price or price-note (landing page owns them)', () => {
+  for (const s of SERVICES) {
+    assert.equal('priceLabel' in s, false, `${s.value} must not carry a price on the form`)
+    assert.equal('note' in s, false, `${s.value} must not carry a price-note on the form`)
   }
 })
 
