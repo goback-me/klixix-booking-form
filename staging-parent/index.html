@@ -10,7 +10,7 @@
   booking form, runs the proposed parent listener, validates origin + event source,
   logs every dataLayer push on-screen, and "redirects" in-page only.
   CONTAINS NO PRODUCTION GOOGLE TAGS — dataLayer is a local array this page owns, so a
-  confirmed booking fires nothing to Google.
+  booking_request_submitted event fires nothing to Google.
 -->
 <style>
   :root { --fg:#111; --bg:#fff; --muted:#666; --line:#e3e3e3; --accent:#ff4d24; --ok:#0a7d32; --warn:#b26a00; }
@@ -38,7 +38,8 @@
     <div id="host"></div>
   </div>
   <div class="panel">
-    <h2>dataLayer inspector (local — fires nothing to Google)</h2>
+    <h2>dataLayer inspector — booking_request_submitted</h2>
+    <p style="margin:-4px 0 12px;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0">Local staging only — sends nothing to Google</p>
     <div id="log"></div>
   </div>
 </div>

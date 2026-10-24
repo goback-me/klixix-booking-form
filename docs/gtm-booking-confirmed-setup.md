@@ -78,6 +78,11 @@ Google Ads only records a conversion when it can match an eligible ad interactio
 5. Duplicate `booking_reference` → at most one Ads conversion.
 
 ## Rollback
-- Pause the `booking_request_submitted` → Ads/GA4 tags (no code deploy).
-- **Do NOT** re‑enable the `/thank-you-booking/` page‑view conversion as Primary.
-- If interim measurement is required, mark it Secondary/diagnostic and clearly label it unreliable — **only with Jai's approval.**
+- **Fast pause (no version change):** pause the `booking_request_submitted` → Ads/GA4 tags. No code deploy.
+- **Emergency rollback:** restore the **complete previous GTM version**. This temporarily brings back the
+  old `/thank-you-booking/` page‑view trigger — that is acceptable as an emergency measure to keep *some*
+  measurement live. It is a temporary state, not the target: re‑apply the corrected version (new event
+  trigger active + page‑view trigger removed) once the issue is resolved.
+- Do **not** *deliberately* keep the page‑view conversion as Primary. If interim measurement is required,
+  mark it Secondary/diagnostic and clearly label it unreliable — **only with Jai's approval**.
+- Roll back the GTM version on any duplicated or missing event.
