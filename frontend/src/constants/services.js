@@ -30,7 +30,7 @@ export const SERVICES = [
   {
     id: 6,
     value: 'air_conditioning_service',
-    name: 'Car Air Conditioning Service',
+    name: 'Air Conditioning Service',
     image: './svc-air-conditioning.png',
     priceLabel: 'A$249 incl. GST',
     note: 'Inspection first. If a major fault or additional repair is identified, we’ll provide a separate quotation before proceeding.',

@@ -7,7 +7,7 @@ const AC = getServiceByValue('air_conditioning_service')
 
 test('AC is a top-level service (shared list → available at both workshops)', () => {
   assert.ok(AC, 'AC service exists')
-  assert.equal(AC.name, 'Car Air Conditioning Service')
+  assert.equal(AC.name, 'Air Conditioning Service')
   assert.equal(AC.value, 'air_conditioning_service')
   assert.equal(AC.priceLabel, 'A$249 incl. GST')
   assert.match(AC.note, /Inspection first/)
