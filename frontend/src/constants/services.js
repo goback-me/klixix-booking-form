@@ -1,6 +1,6 @@
 /**
  * Top-level bookable services. Each has a STABLE `value` (used for analytics /
- * booking_confirmed service_type) that never changes even if the display `name`
+ * booking_request_submitted service_type) that never changes even if the display `name`
  * is reworded. The display `name` is what flows to MechanicDesk via job_type_names.
  */
 

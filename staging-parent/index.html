@@ -75,14 +75,14 @@ if (!window.__caroneBookingListenerRegistered) {
     if (r.action === 'duplicate') { log('ok', 'duplicate acked, NOT re-pushed', { ref: r.ack }); ack(event.source, r.ack); return; }
     // accept
     window.dataLayer.push(r.push);
-    log('ok', 'dataLayer.push booking_confirmed (LOCAL — no Google request)', r.push);
+    log('ok', 'dataLayer.push booking_request_submitted (LOCAL — no Google request)', r.push);
     ack(event.source, r.ack);
     if (r.redirect) {
       // Redirect AFTER the event: mirror the production listener's eventCallback +
       // bounded fallback. No GTM here, so the bounded setTimeout fallback fires.
       var done = false;
       var go = function () { if (!done) { done = true; log('', 'paid_landing → staging thank-you ' + ISOLATED_THANKYOU); location.hash = ISOLATED_THANKYOU; } };
-      window.dataLayer.push({ event: 'booking_confirmed_redirect', eventCallback: go, eventTimeout: 1500 });
+      window.dataLayer.push({ event: 'booking_request_submitted_redirect', eventCallback: go, eventTimeout: 1500 });
       setTimeout(go, 1800);
     }
   }, false);

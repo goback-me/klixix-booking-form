@@ -12,14 +12,14 @@ function ctx(seed = {}) {
   return { embedOrigin: ORIGIN, iframeWindow: IFRAME, session: { get: (k) => store.get(k), set: (k, v) => store.set(k, v) }, _store: store }
 }
 function msg(over = {}) {
-  return { origin: ORIGIN, source: IFRAME, data: { type: 'carone_booking_confirmed', booking_reference: UUID, workshop: 'hendra', service_type: 'Logbook Service', booking_entry_point: 'main_site', landing_page_type: 'none', ...over } }
+  return { origin: ORIGIN, source: IFRAME, data: { type: 'carone_booking_request_submitted', booking_reference: UUID, workshop: 'hendra', service_type: 'Logbook Service', booking_entry_point: 'main_site', landing_page_type: 'none', ...over } }
 }
 
 // ── Phase 6: origin/source/payload security ──────────────────────────────────
 test('P6.1 correct message from correct iframe+origin → accept, one push', () => {
   const r = decideBookingMessage(msg(), ctx())
   assert.equal(r.action, 'accept')
-  assert.equal(r.push.event, 'booking_confirmed')
+  assert.equal(r.push.event, 'booking_request_submitted')
 })
 test('P6.2 correct-looking message from the PARENT window (source=window) → reject bad_source', () => {
   const e = msg(); e.source = OTHER

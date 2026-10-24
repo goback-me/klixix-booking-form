@@ -441,12 +441,12 @@ export default function BookingForm({ isVip = false }) {
 
       if (data.confirmed === true) {
         setBookingSubmitted(true)
-        // Confirmed ONLY: notify the parent to fire the conversion. The PARENT owns the
+        // Request accepted (MechanicDesk stored the online request — NOT a staff-created diary booking): fire the booking_request_submitted conversion. The PARENT owns the
         // Ads/GA4 push AND the thank-you redirect, so the iframe never navigates
         // window.top itself (no navigation race, no refresh re-fire).
         if (window.parent !== window && PARENT_ORIGIN) {
           window.parent.postMessage({
-            type: 'carone_booking_confirmed',
+            type: 'carone_booking_request_submitted',
             booking_reference: data.booking_reference,
             workshop: workshop?.workshopId || '',
             service_type: serviceType,

@@ -1,12 +1,12 @@
 /*
- * CarOne — parent-page listener for confirmed online bookings.
+ * CarOne — parent-page listener for accepted online booking requests.
  *
  * FOR ADEEL — DO NOT INSTALL YET. Ship as a version-controlled mu-plugin or theme
  * component (NOT an Elementor HTML block), loaded site-wide (every page that can
  * embed the booking form + the thank-you page). One registered listener only.
  *
- * It receives a CONFIRMED booking event from the booking iframe, validates it,
- * pushes ONE `booking_confirmed` into the dataLayer (GTM fires Ads/GA4), acks the
+ * It receives an ACCEPTED booking-request event from the booking iframe (MechanicDesk stored the request — not yet a staff-created diary booking), validates it,
+ * pushes ONE `booking_request_submitted` into the dataLayer (GTM fires Ads/GA4), acks the
  * iframe, and (for paid landing pages only) controls the redirect AFTER the tag.
  * No customer PII is ever read or forwarded.
  */
@@ -40,7 +40,7 @@
   window.addEventListener('message', function (event) {
     if (event.origin !== EMBED_ORIGIN) return;                 // 1) exact origin
     var d = event.data;
-    if (!d || d.type !== 'carone_booking_confirmed') return;   // 2) exact message type
+    if (!d || d.type !== 'carone_booking_request_submitted') return;   // 2) exact message type
     if (!fromBookingIframe(event.source)) return;              // 3) event.source is the booking iframe
     var ref = String(d.booking_reference || '');
     if (!UUID_RE.test(ref)) return;                            // 4) reference is a UUID
@@ -60,7 +60,7 @@
 
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
-      event: 'booking_confirmed',
+      event: 'booking_request_submitted',
       booking_reference: ref,          // → Google Ads transaction_id
       workshop: workshop,
       service_type: service,
@@ -75,7 +75,7 @@
     if (entry === 'paid_landing') {
       var done = false;
       var go = function () { if (!done) { done = true; window.location.href = THANK_YOU_URL; } };
-      window.dataLayer.push({ event: 'booking_confirmed_redirect', eventCallback: go, eventTimeout: 1500 });
+      window.dataLayer.push({ event: 'booking_request_submitted_redirect', eventCallback: go, eventTimeout: 1500 });
       setTimeout(go, 1800); // bounded fallback if GTM/eventCallback is unavailable
     }
   }, false);

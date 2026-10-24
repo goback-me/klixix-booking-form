@@ -116,7 +116,7 @@
       if (!EMBED_ORIGIN) { log('warn', 'rejected: EMBED_ORIGIN not configured'); return; }
       if (event.origin !== EMBED_ORIGIN) { log('warn', 'rejected: wrong origin', { got: event.origin, want: EMBED_ORIGIN }); return; }
       var d = event.data;
-      if (!d || d.type !== 'carone_booking_confirmed') return;
+      if (!d || d.type !== 'carone_booking_request_submitted') return;
       if (!iframe || event.source !== iframe.contentWindow) { log('warn', 'rejected: event.source is not the booking iframe'); return; }
 
       var ref = String(d.booking_reference || '');
@@ -134,14 +134,14 @@
       } catch (e) {}
 
       window.dataLayer.push({
-        event: 'booking_confirmed',
+        event: 'booking_request_submitted',
         booking_reference: ref,
         workshop: workshop,
         service_type: service,
         booking_entry_point: entry,
         landing_page_type: String(d.landing_page_type || 'none')
       });
-      log('ok', 'dataLayer.push booking_confirmed (LOCAL — no Google request sent)', window.dataLayer[window.dataLayer.length - 1]);
+      log('ok', 'dataLayer.push booking_request_submitted (LOCAL — no Google request sent)', window.dataLayer[window.dataLayer.length - 1]);
 
       ack(event.source, ref);
 

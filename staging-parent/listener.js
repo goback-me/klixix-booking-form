@@ -1,10 +1,10 @@
 /**
- * CarOne confirmed-booking parent listener — shared, testable logic.
+ * CarOne booking-request parent listener — shared, testable logic.
  *
  * The same module is imported by the staging parent page (in the browser) AND by
  * listener.test.js (in Node), so the deployed code is exactly the tested code.
  * It validates a postMessage and decides what (if anything) to do: push ONE
- * booking_confirmed with a strict field whitelist, ack the iframe, and — only for
+ * booking_request_submitted with a strict field whitelist, ack the iframe, and — only for
  * paid landing — request a redirect. No PII ever enters the push.
  */
 
@@ -31,7 +31,7 @@ export function decideBookingMessage(event, ctx) {
 
   if (event.origin !== embedOrigin) return { action: 'reject', reason: 'bad_origin' }
   if (!d || typeof d !== 'object') return { action: 'reject', reason: 'non_object' }
-  if (d.type !== 'carone_booking_confirmed') return { action: 'reject', reason: 'bad_type' }
+  if (d.type !== 'carone_booking_request_submitted') return { action: 'reject', reason: 'bad_type' }
   if (event.source !== iframeWindow) return { action: 'reject', reason: 'bad_source' }
 
   const ref = String(d.booking_reference || '')
@@ -50,12 +50,12 @@ export function decideBookingMessage(event, ctx) {
 
   // STRICT whitelist — exactly these five fields, nothing arbitrary, no PII.
   const push = {
-    event: 'booking_confirmed',
+    event: 'booking_request_submitted',
     booking_reference: ref,
     workshop: workshop,
     service_type: service,
     booking_entry_point: entry,
     landing_page_type: String(d.landing_page_type || 'none'),
   }
-  return { action: 'accept', reason: 'confirmed', ack: ref, push, redirect: entry === 'paid_landing' }
+  return { action: 'accept', reason: 'request_submitted', ack: ref, push, redirect: entry === 'paid_landing' }
 }
