@@ -23,11 +23,11 @@ function normalizeAuPhone(raw) {
 // Pure helpers (exported for unit tests — no network/DB).
 // ──────────────────────────────────────────────────────────────────────────
 
-/** Configurable MechanicDesk request timeout (ms), validated. Default 12000. */
+/** Configurable MechanicDesk request timeout (ms), validated. Default 25000. */
 export function getMechanicDeskTimeoutMs() {
   const parsed = Number.parseInt(String(process.env.MECHANICDESK_TIMEOUT_MS || ''), 10)
   if (Number.isFinite(parsed) && parsed >= 1000 && parsed <= 60000) return parsed
-  return 12000
+  return 25000
 }
 
 /**
@@ -81,7 +81,8 @@ async function postMechanicDesk(token, bookingFields) {
     const response = await fetch(MECHANICDESK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, ...bookingFields }),
+      // Token last so a client-supplied `token` field can never override it.
+      body: JSON.stringify({ ...bookingFields, token }),
       signal: controller.signal,
     })
     let responseData = { ok: response.ok }
@@ -226,7 +227,8 @@ export async function processBooking({ payload, token, idemKey, deps = realDeps 
 
   // 2) This request owns MechanicDesk submission; the stored row exists.
   const bookingId = claim.row?.id || null
-  const { workshop, ...bookingFields } = payload
+  // idempotency_key is internal; MechanicDesk gets the same fields it always has.
+  const { workshop, idempotency_key, ...bookingFields } = payload
   const shortRef = bookingId ? `CARONE-${String(bookingId).replace(/-/g, '').slice(0, 8).toUpperCase()}` : null
   const sourceTag = `[Online booking${shortRef ? ` · ${shortRef}` : ''}]`
   for (const key of ['note', 'booking_note', 'alert']) {

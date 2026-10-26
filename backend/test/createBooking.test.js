@@ -179,9 +179,9 @@ test('duplicate of a sync_unknown row → 202 confirmed:false (no second Mechani
 })
 
 // ── getMechanicDeskTimeoutMs (configurable, validated) ───────────────────────
-test('timeout defaults to 12000', () => {
+test('timeout defaults to 25000', () => {
   delete process.env.MECHANICDESK_TIMEOUT_MS
-  assert.equal(getMechanicDeskTimeoutMs(), 12000)
+  assert.equal(getMechanicDeskTimeoutMs(), 25000)
 })
 test('timeout honours a valid env override', () => {
   process.env.MECHANICDESK_TIMEOUT_MS = '8000'
@@ -190,8 +190,8 @@ test('timeout honours a valid env override', () => {
 })
 test('timeout rejects out-of-range / invalid env (falls back to default)', () => {
   process.env.MECHANICDESK_TIMEOUT_MS = '999999'
-  assert.equal(getMechanicDeskTimeoutMs(), 12000)
+  assert.equal(getMechanicDeskTimeoutMs(), 25000)
   process.env.MECHANICDESK_TIMEOUT_MS = 'abc'
-  assert.equal(getMechanicDeskTimeoutMs(), 12000)
+  assert.equal(getMechanicDeskTimeoutMs(), 25000)
   delete process.env.MECHANICDESK_TIMEOUT_MS
 })
