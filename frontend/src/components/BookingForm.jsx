@@ -4,24 +4,12 @@ import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
 import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
 import { noticeForPendingState } from '../constants/notices'
+import {
+  validateName, validateEmail, validatePhone, validateRegistration, validateMake,
+  validateModel, validateYear, validateVin, validateVipNumber, validateAdditionalInfo,
+} from '../constants/validation'
 
-/** Reduce any AU phone input to canonical 0-leading digits (handles +61 / 61 forms). */
-export function toAuPhoneDigits(raw) {
-  let s = String(raw || '').replace(/[^\d+]/g, '')
-  if (s.startsWith('+61')) s = '0' + s.slice(3)
-  else if (s.startsWith('61') && s.length === 11) s = '0' + s.slice(2)
-  return s.replace(/\D/g, '')
-}
-
-/** A valid AU number: 10 digits, 0 + a mobile (4) or landline (2/3/7/8) prefix. */
-export function isValidAuPhone(raw) {
-  return /^0[234578]\d{8}$/.test(toAuPhoneDigits(raw))
-}
-
-/** At least a first and last name (two words). */
-function isValidFullName(raw) {
-  return /\S+\s+\S+/.test(String(raw || '').trim())
-}
+export { toAuPhoneDigits, isValidAuPhone } from '../constants/validation'
 
 /**
  * @typedef {{ workshopId: string, name?: string }} Workshop
@@ -63,6 +51,11 @@ const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS',
 // only posts a confirmed event to this EXACT origin (never '*'); set per env.
 // Production: https://car-one.com.au ; staging: the authorised staging parent origin.
 const PARENT_ORIGIN = import.meta.env.VITE_PARENT_ORIGIN || ''
+
+// Fallback for paid landing pages: if the parent listener hasn't acked within this
+// window (not installed, or VITE_PARENT_ORIGIN unset), the iframe redirects itself.
+const THANK_YOU_URL = 'https://car-one.com.au/thank-you-booking/'
+const PARENT_ACK_TIMEOUT_MS = 2500
 
 /**
  * @param {string} dateStr
@@ -143,17 +136,19 @@ function validateStep(step, bookingData, isVip = false) {
 
       // Each failing field gets its own message so the error points to the right box.
       const fieldErrors = /** @type {Record<string, string>} */ ({})
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-      if (!emailRegex.test(email)) fieldErrors.email = 'Please enter a valid email address.'
-      if (!isValidFullName(d.fullName)) fieldErrors.fullName = 'Please enter your first and last name.'
-      if (!isValidAuPhone(phone)) fieldErrors.phone = 'Please enter a valid Australian phone number (e.g. 0412 345 678).'
-
-      const yearRegex = /^\d{4}$/
-      const yearNumber = Number.parseInt(year, 10)
-      const currentYear = new Date().getFullYear()
-      if (!yearRegex.test(year) || yearNumber < 1900 || yearNumber > currentYear + 1) {
-        fieldErrors.year = 'Please enter a 4-digit vehicle year.'
-      }
+      const checks = /** @type {[string, string][]} */ ([
+        ['registration', validateRegistration(d.registration)],
+        ['vin', validateVin(d.vin)],
+        ['make', validateMake(d.make)],
+        ['model', validateModel(d.model)],
+        ['year', validateYear(year)],
+        ['fullName', validateName(d.fullName)],
+        ['email', validateEmail(email)],
+        ['phone', validatePhone(phone)],
+        ['vipNumber', isVip ? validateVipNumber(d.vipNumber) : ''],
+        ['additionalInfo', validateAdditionalInfo(d.additionalInfo)],
+      ])
+      for (const [field, msg] of checks) if (msg) fieldErrors[field] = msg
 
       const invalid = Object.keys(fieldErrors)
       if (invalid.length) {
@@ -211,14 +206,15 @@ export default function BookingForm({ isVip = false }) {
     window.parent.postMessage({ type: 'carone-resize', height }, PARENT_ORIGIN || '*')
   }, [currentStep])
 
-  // Lightweight ack from the parent (protocol completeness). The iframe does NOT
-  // block its UX on this — it already shows the summary on confirmation — but the
-  // ack lets the parent signal it has taken over the conversion/redirect.
+  // Ack from the parent: it has taken over the conversion/redirect. The iframe does
+  // NOT block its UX on this — it already shows the summary on confirmation — but on
+  // paid landing pages a missing ack triggers the iframe's own thank-you redirect.
+  const parentAckRef = useRef(false)
   useEffect(() => {
     if (typeof window === 'undefined' || !PARENT_ORIGIN) return
     const onMessage = (e) => {
       if (e.origin !== PARENT_ORIGIN) return
-      if (e?.data?.type === 'carone_booking_ack') { /* parent handled the conversion */ }
+      if (e?.data?.type === 'carone_booking_ack') parentAckRef.current = true
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -396,7 +392,7 @@ export default function BookingForm({ isVip = false }) {
     // Privacy-safe segmentation for analytics (no PII). Entry point lets Ads/GA4
     // separate paid-landing-page bookings from the rest. serviceType is the STABLE
     // service value (e.g. air_conditioning_service), not the display name.
-    const { bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
+    const { isQuote, bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
     // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -454,6 +450,14 @@ export default function BookingForm({ isVip = false }) {
             booking_entry_point: bookingEntryPoint,
             landing_page_type: landingPageType,
           }, PARENT_ORIGIN) // exact origin, never '*'
+        }
+        // Paid landing page: the thank-you redirect must always happen. If the parent
+        // listener acks, it owns the redirect (after its tag fires); otherwise we do it.
+        if (window.parent !== window && isQuote) {
+          setTimeout(() => {
+            if (parentAckRef.current) return
+            try { window.top.location.href = THANK_YOU_URL } catch { /* sandboxed: summary stays */ }
+          }, PARENT_ORIGIN ? PARENT_ACK_TIMEOUT_MS : 0)
         }
         // Always show our own confirmation summary as the fallback (parent-absent);
         // if the parent redirects after its tag fires, that replaces this view.

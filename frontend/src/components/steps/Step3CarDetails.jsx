@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { AlertTriangle, CheckCircle2, Search, User } from 'lucide-react'
 import StepHeader from '../StepHeader'
 import { loadTurnstile, TURNSTILE_SITE_KEY } from '../../lib/turnstile'
+import {
+  LIMITS, sanitizePhone, sanitizeName, sanitizeEmail, sanitizeRegistration,
+  sanitizeMake, sanitizeModel, sanitizeVipNumber,
+} from '../../constants/validation'
 
 const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
 const VEHICLE_FIELDS = ['make', 'model', 'year']
@@ -416,8 +420,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   type="text"
                   placeholder="e.g. ABC123"
                   value={details.registration}
-                  onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
+                  onChange={(e) => handleIdentityChange('registration', sanitizeRegistration(e.currentTarget.value))}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
+                  maxLength={LIMITS.registration}
                   className="flex-1 min-w-0 px-3 py-3 bg-white text-[#111] placeholder:text-[#ababab] focus:outline-none"
                   autoCapitalize="characters"
                   autoCorrect="off"
@@ -442,6 +447,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   )}
                 </button>
               </div>
+              {FieldError('registration')}
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
@@ -472,6 +478,7 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                     {vinLength}/17
                   </span>
                 </div>
+                {FieldError('vin')}
               </div>
               <button
                 type="button"
@@ -507,12 +514,14 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   type="text"
                   placeholder="e.g. ABC123"
                   value={details.registration}
-                  onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
+                  onChange={(e) => handleIdentityChange('registration', sanitizeRegistration(e.currentTarget.value))}
+                  maxLength={LIMITS.registration}
                   className={`${inputClass('registration')} bg-white!`}
                   autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}
                 />
+                {FieldError('registration')}
               </div>
               <div className="w-full sm:w-28">
                 <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
@@ -584,12 +593,14 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. ABC123"
                 value={details.registration}
-                onChange={(e) => handleChange('registration', e.currentTarget.value.toUpperCase())}
+                onChange={(e) => handleChange('registration', sanitizeRegistration(e.currentTarget.value))}
+                maxLength={LIMITS.registration}
                 className={inputClass('registration')}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
               />
+              {FieldError('registration')}
             </div>
             <div>
               <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
@@ -616,7 +627,8 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. Mitsubishi"
                 value={details.make}
-                onChange={(e) => handleChange('make', e.currentTarget.value)}
+                onChange={(e) => handleChange('make', sanitizeMake(e.currentTarget.value))}
+                maxLength={LIMITS.make}
                 className={inputClass('make')}
               />
               {FieldError('make')}
@@ -630,7 +642,8 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. Triton"
                 value={details.model}
-                onChange={(e) => handleChange('model', e.currentTarget.value)}
+                onChange={(e) => handleChange('model', sanitizeModel(e.currentTarget.value))}
+                maxLength={LIMITS.model}
                 className={inputClass('model')}
               />
               {FieldError('model')}
@@ -671,7 +684,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               type="text"
               placeholder="First and last name"
               value={details.fullName}
-              onChange={(e) => handleChange('fullName', e.currentTarget.value)}
+              onChange={(e) => handleChange('fullName', sanitizeName(e.currentTarget.value))}
+              maxLength={LIMITS.name}
+              autoComplete="name"
               className={inputClass('fullName')}
             />
             {FieldError('fullName')}
@@ -685,7 +700,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               type="email"
               placeholder="yourname@example.com"
               value={details.email}
-              onChange={(e) => handleChange('email', e.currentTarget.value)}
+              onChange={(e) => handleChange('email', sanitizeEmail(e.currentTarget.value))}
+              maxLength={LIMITS.email}
+              autoComplete="email"
+              autoCapitalize="off"
+              spellCheck={false}
               className={inputClass('email')}
             />
             {FieldError('email')}
@@ -697,9 +716,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="tel"
-              placeholder="e.g. 0412 345 678"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="e.g. 0412345678"
               value={details.phone}
-              onChange={(e) => handleChange('phone', e.currentTarget.value)}
+              onChange={(e) => handleChange('phone', sanitizePhone(e.currentTarget.value))}
+              maxLength={11}
+              autoComplete="tel"
               className={inputClass('phone')}
             />
             {FieldError('phone')}
@@ -714,9 +737,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="Enter your VIP number"
                 value={details.vipNumber || ''}
-                onChange={(e) => handleChange('vipNumber', e.currentTarget.value)}
+                onChange={(e) => handleChange('vipNumber', sanitizeVipNumber(e.currentTarget.value))}
+                maxLength={LIMITS.vipNumber}
                 className={inputClass('vipNumber')}
               />
+              {FieldError('vipNumber')}
             </div>
           )}
 
@@ -727,8 +752,13 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               placeholder="e.g. Strange noise when braking, service light is on, car pulls to the left ... "
               value={details.additionalInfo}
               onChange={(e) => handleChange('additionalInfo', e.currentTarget.value)}
+              maxLength={LIMITS.additionalInfo}
               className="w-full p-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:border-[rgba(255,77,36,1)]"
             />
+            <p className="mt-1 text-right text-xs text-gray-400 tabular-nums">
+              {(details.additionalInfo || '').length}/{LIMITS.additionalInfo}
+            </p>
+            {FieldError('additionalInfo')}
           </div>
         </div>
       </div>

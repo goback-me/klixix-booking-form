@@ -4,23 +4,14 @@ import { body, validationResult } from 'express-validator'
 import { claimBooking, getBookingByIdemKey, updateBookingState } from '../lib/bookingsStore.js'
 import { sendBookingWebhook } from '../lib/webhook.js'
 import { resolvePostMechanicDesk, isFakeModeEnabled } from '../lib/mechanicDeskMode.js'
+import {
+  validateName, validateEmail, validatePhone, validateRegistration, validateMake,
+  validateModel, validateYear, validateVin, validateVipNumber, toAuPhoneDigits,
+} from '../lib/validation.js'
 
 const router = Router()
 const AU_TIMEZONE = 'Australia/Brisbane'
 const MECHANICDESK_URL = 'https://www.mechanicdesk.com.au/booking_requests/create_booking'
-
-/** Reduce an AU phone to canonical 0-leading digits (handles +61 / 61 forms). */
-function toAuPhoneDigits(raw) {
-  let s = String(raw || '').replace(/[^\d+]/g, '')
-  if (s.startsWith('+61')) s = '0' + s.slice(3)
-  else if (s.startsWith('61') && s.length === 11) s = '0' + s.slice(2)
-  return s.replace(/\D/g, '')
-}
-
-/** A valid AU number: 10 digits, 0 + a mobile (4) or landline (2/3/5/7/8) prefix. */
-function isValidAuPhone(raw) {
-  return /^0[234578]\d{8}$/.test(toAuPhoneDigits(raw))
-}
 
 /** Normalise a valid AU number to compact 0-leading form (e.g. 0412345678) for MechanicDesk SMS. */
 function normalizeAuPhone(raw) {
@@ -147,20 +138,28 @@ function parseDropOffDate(value) {
   return `${match[3]}-${match[2]}-${match[1]}`
 }
 
+/** Adapt a shared validate* rule (returns '' or a message) to express-validator. */
+const rule = (check) => (value) => {
+  const msg = check(value)
+  if (msg) throw new Error(msg)
+  return true
+}
+
 const validate = [
   body('workshop').trim().notEmpty().withMessage('Workshop is required'),
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('phone').trim().notEmpty().withMessage('Phone is required')
-    .bail()
-    .custom((value) => {
-      if (!isValidAuPhone(value)) throw new Error('Please enter a valid Australian phone number')
-      return true
-    }),
-  body('email').trim().isEmail().withMessage('Valid email is required'),
-  body('registration_number').trim().notEmpty().withMessage('Registration is required'),
-  body('make').trim().notEmpty().withMessage('Make is required'),
-  body('model').trim().notEmpty().withMessage('Model is required'),
-  body('year').trim().notEmpty().withMessage('Year is required'),
+  body('name').trim().notEmpty().withMessage('Name is required').bail().custom(rule(validateName)),
+  body('phone').trim().notEmpty().withMessage('Phone is required').bail().custom(rule(validatePhone)),
+  body('email').trim().notEmpty().withMessage('Email is required').bail()
+    .isEmail().withMessage('Valid email is required').bail().custom(rule(validateEmail)),
+  body('registration_number').trim().notEmpty().withMessage('Registration is required').bail().custom(rule(validateRegistration)),
+  body('make').trim().notEmpty().withMessage('Make is required').bail().custom(rule(validateMake)),
+  body('model').trim().notEmpty().withMessage('Model is required').bail().custom(rule(validateModel)),
+  body('year').trim().notEmpty().withMessage('Year is required').bail().custom(rule((v) => validateYear(v))),
+  body('vin').optional({ values: 'falsy' }).trim().custom(rule(validateVin)),
+  body('vip_number').optional({ values: 'falsy' }).trim().custom(rule(validateVipNumber)),
+  body('state').optional({ values: 'falsy' }).trim()
+    .isIn(['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']).withMessage('Invalid state'),
+  body('note').optional().isLength({ max: 4000 }).withMessage('Note is too long'),
   body('drop_off_time').trim().notEmpty().withMessage('Drop off time is required'),
   body('drop_off_time').custom((value) => {
     const selectedDate = parseDropOffDate(value)
