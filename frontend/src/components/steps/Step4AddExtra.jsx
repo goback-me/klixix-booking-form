@@ -1,13 +1,15 @@
 import { useEffect } from 'preact/hooks'
 import ServiceCard from '../ServiceCard'
-import { getAddonsByWorkshopId } from '../../constants/addons'
+import { addonsForPrimary } from '../../constants/addons'
 import StepHeader from '../StepHeader'
 
 /**
  * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, onPrev?: () => void, onGoToStep?: (step: number) => void }} props
  */
 export default function Step4AddExtra({ bookingData, updateBookingData, onPrev, onGoToStep }) {
-  const services = getAddonsByWorkshopId(bookingData?.workshop?.workshopId)
+  // The A/C add-on shows for every primary service except Air Conditioning Service
+  // (hidden there, so it can't duplicate the primary).
+  const services = addonsForPrimary(bookingData?.workshop?.workshopId, bookingData?.service?.value)
 
   /** @type {number[]} */
   const selectedExtras = bookingData.extras || []
@@ -41,7 +43,7 @@ export default function Step4AddExtra({ bookingData, updateBookingData, onPrev, 
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-2">
-          {services.map((service, idx) => (
+          {services.filter((service) => !service.noAddon).map((service, idx) => (
             <ServiceCard
               key={service.id}
               service={{ ...service, price: service.priceLabel }}

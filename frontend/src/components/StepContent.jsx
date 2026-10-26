@@ -40,7 +40,7 @@ const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step
  */
 
 /** @param {StepContentProps & { isVip?: boolean, isQuotePage?: boolean }} props */
-export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip, isQuotePage }) {
+export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, submitNotice, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip, isQuotePage }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -68,7 +68,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
   }
 
   const contentScrollClass = 'no-scrollbar flex-1 min-h-0 overflow-y-auto overflow-x-hidden'
-  const shouldShowFooter = !isAutoAdvanceStep || Boolean(submitError) || Boolean(validationError)
+  const shouldShowFooter = !isAutoAdvanceStep || Boolean(submitError) || Boolean(submitNotice) || Boolean(validationError)
   const footerPaddingClass = (isDateTimeStep || isAddonsStep) ? 'p-2 sm:p-4 md:p-5' : 'p-3 sm:p-4 md:p-5'
   const footerClass = isSummaryStep
     ? `mobile-safe-footer border-t border-gray-200 ${footerPaddingClass} flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 bg-white sticky bottom-0`
@@ -118,6 +118,9 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
       {shouldShowFooter && <div className={footerClass}>
         {submitError && (
           <p className="w-full text-sm text-red-500 mb-1">{submitError}</p>
+        )}
+        {submitNotice && (
+          <p className="w-full text-sm text-amber-600 mb-1">{submitNotice}</p>
         )}
         {validationError && (
           <p className="w-full text-sm text-red-500 mb-1">{validationError.message}</p>

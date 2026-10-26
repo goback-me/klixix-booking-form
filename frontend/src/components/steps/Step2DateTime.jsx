@@ -298,7 +298,11 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
 
   useEffect(() => {
     if (!selectedTime) {
-      setSelectedTime('8:00 AM')
+      // Pre-select the first genuinely available slot (not a hardcoded 8:00 AM
+      // that could be closed), highlighted so the customer can change it — keeps
+      // booking quick while still being a real, bookable choice.
+      const firstAvailable = getFirstAvailableTimeSlotLabel()
+      if (firstAvailable) setSelectedTime(firstAvailable)
     }
   }, [selectedTime])
 
