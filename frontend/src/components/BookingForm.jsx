@@ -1,15 +1,7 @@
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
-import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
-import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
-import { noticeForPendingState } from '../constants/notices'
-import {
-  validateName, validateEmail, validatePhone, validateRegistration, validateMake,
-  validateModel, validateYear, validateVin, validateVipNumber, validateAdditionalInfo,
-} from '../constants/validation'
-
-export { toAuPhoneDigits, isValidAuPhone } from '../constants/validation'
+import { getAddonLookupByWorkshopId } from '../constants/addons'
 
 /**
  * @typedef {{ workshopId: string, name?: string }} Workshop
@@ -39,23 +31,23 @@ export { toAuPhoneDigits, isValidAuPhone } from '../constants/validation'
  *   carDetails: CarDetails,
  *   extras: number[],
  * }} BookingData
- * @typedef {{ message: string, fields?: string[], fieldErrors?: Record<string, string> }} ValidationError
+ * @typedef {{ message: string, fields?: string[] }} ValidationError
  */
 
 const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT'])
 
-// QUOTE_PAGE_PATHS now lives in ../constants/services (shared with the service list
-// and the testable conversion-field helper).
+const QUOTE_PAGE_PATHS = [
+  '/spring-service-hendra-g/',
+  '/pre-purchase-new/',
+  '/spring-service-woolloongabba-g/',
+  '/roadworthy-certificate-brisbane/',
+  '/european-car-service-brisbane/',
+  '/logbook-service-brisbane/',
+  '/ac-service-new-brisbane/',
+  '/car-mechanic-service-brisbane/',
+]
 
-// The parent site now owns the conversion + the thank-you redirect. The iframe
-// only posts a confirmed event to this EXACT origin (never '*'); set per env.
-// Production: https://car-one.com.au ; staging: the authorised staging parent origin.
-const PARENT_ORIGIN = import.meta.env.VITE_PARENT_ORIGIN || ''
-
-// Fallback for paid landing pages: if the parent listener hasn't acked within this
-// window (not installed, or VITE_PARENT_ORIGIN unset), the iframe redirects itself.
 const THANK_YOU_URL = 'https://car-one.com.au/thank-you-booking/'
-const PARENT_ACK_TIMEOUT_MS = 2500
 
 /**
  * @param {string} dateStr
@@ -134,28 +126,22 @@ function validateStep(step, bookingData, isVip = false) {
       if (isVip && !d.vipNumber?.trim()) missing.push('vipNumber')
       if (missing.length) return { message: 'Please fill in all required fields', fields: missing }
 
-      // Each failing field gets its own message so the error points to the right box.
-      const fieldErrors = /** @type {Record<string, string>} */ ({})
-      const checks = /** @type {[string, string][]} */ ([
-        ['registration', validateRegistration(d.registration)],
-        ['vin', validateVin(d.vin)],
-        ['make', validateMake(d.make)],
-        ['model', validateModel(d.model)],
-        ['year', validateYear(year)],
-        ['fullName', validateName(d.fullName)],
-        ['email', validateEmail(email)],
-        ['phone', validatePhone(phone)],
-        ['vipNumber', isVip ? validateVipNumber(d.vipNumber) : ''],
-        ['additionalInfo', validateAdditionalInfo(d.additionalInfo)],
-      ])
-      for (const [field, msg] of checks) if (msg) fieldErrors[field] = msg
+      const invalid = []
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+      if (!emailRegex.test(email)) invalid.push('email')
 
-      const invalid = Object.keys(fieldErrors)
+      const phoneDigits = phone.replace(/\D/g, '')
+      if (phoneDigits.length < 8 || phoneDigits.length > 12) invalid.push('phone')
+
+      const yearRegex = /^\d{4}$/
+      const yearNumber = Number.parseInt(year, 10)
+      const currentYear = new Date().getFullYear()
+      if (!yearRegex.test(year) || yearNumber < 1900 || yearNumber > currentYear + 1) invalid.push('year')
+
       if (invalid.length) {
         return {
-          message: invalid.length === 1 ? fieldErrors[invalid[0]] : 'Please fix the highlighted fields.',
+          message: 'Please enter a valid email, phone number, and 4-digit vehicle year.',
           fields: invalid,
-          fieldErrors,
         }
       }
 
@@ -173,28 +159,10 @@ export default function BookingForm({ isVip = false }) {
   const [bookingData, setBookingData] = useState(initialBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  // Truthful "received but not confirmed" notice (HTTP 202) — NOT an error, NOT a conversion.
-  const [submitNotice, setSubmitNotice] = useState('')
   const [validationError, setValidationError] = useState(/** @type {ValidationError | null} */ (null))
   const [parentUrl, setParentUrl] = useState('')
   // Store UTM/ad params from iframe URL
   const [utmParams, setUtmParams] = useState({})
-  // Once a booking succeeds we lock navigation so the progress bar can't be used
-  // to go back and Confirm a second time (prevents double bookings).
-  const [bookingSubmitted, setBookingSubmitted] = useState(false)
-  // Stable id for one booking attempt so a retry / double-click is de-duplicated
-  // on the server instead of creating a second booking.
-  const idempotencyKeyRef = useRef(/** @type {string | null} */ (null))
-  // Synchronous submit lock — React's `submitting` state updates async, so rapid
-  // double/triple-clicks can slip through before it flips. A ref blocks them in
-  // the same tick, so only one request is ever sent.
-  const submitLockRef = useRef(false)
-  if (!idempotencyKeyRef.current) {
-    idempotencyKeyRef.current =
-      (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : `bk_${Date.now()}_${Math.random().toString(36).slice(2)}`
-  }
 
   // Broadcast height to parent for inline iframe auto-resize
   useEffect(() => {
@@ -203,34 +171,13 @@ export default function BookingForm({ isVip = false }) {
     const stepMinHeights = [700, 700, 760, 860, 780, 980]
     const minHeight = stepMinHeights[currentStep] ?? 800
     const height = Math.max(minHeight, window.innerHeight)
-    window.parent.postMessage({ type: 'carone-resize', height }, PARENT_ORIGIN || '*')
+    window.parent.postMessage({ type: 'carone-resize', height }, '*')
   }, [currentStep])
-
-  // Ack from the parent: it has taken over the conversion/redirect. The iframe does
-  // NOT block its UX on this — it already shows the summary on confirmation — but on
-  // paid landing pages a missing ack triggers the iframe's own thank-you redirect.
-  const parentAckRef = useRef(false)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !PARENT_ORIGIN) return
-    const onMessage = (e) => {
-      if (e.origin !== PARENT_ORIGIN) return
-      if (e?.data?.type === 'carone_booking_ack') parentAckRef.current = true
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [])
   // On mount, read UTM/ad params and parent_url from iframe URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
-      const pUrl = searchParams.get('parent_url') || '';
-      setParentUrl(pUrl);
-      // Paid AC landing page → preselect the standalone Car Air Conditioning Service
-      // (so the AC purchase is the booked service, not a generic one).
-      if (pUrl.includes(AC_LANDING_PATH)) {
-        const ac = getServiceByValue('air_conditioning_service');
-        if (ac) setBookingData((prev) => (prev.service ? prev : { ...prev, service: ac }));
-      }
+      setParentUrl(searchParams.get('parent_url') || '');
       const utmKeys = [
         'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
       ];
@@ -269,7 +216,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const updateBookingData = (key, value) => {
-    setBookingData((prev) => withAcAddonRule(prev, key, value))
+    setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
   }
 
@@ -304,7 +251,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const autoAdvanceWithSelection = (key, value) => {
-    setBookingData((prev) => withAcAddonRule(prev, key, value))
+    setBookingData((prev) => ({ ...prev, [key]: value }))
     setValidationError(null)
     // Delay auto-advance to Step 2 to allow prefetch to complete
     const delay = key === 'service' ? 350 : 0
@@ -320,7 +267,7 @@ export default function BookingForm({ isVip = false }) {
 
   /** @param {number} targetStep */
   const goToStepFromSidebar = (targetStep) => {
-    if (submitting || bookingSubmitted) return
+    if (submitting) return
 
     const isCurrent = targetStep === sidebarCurrentStep
     const isCompleted = completedStepIndexes.includes(targetStep)
@@ -334,23 +281,13 @@ export default function BookingForm({ isVip = false }) {
     setCurrentStep(0)
     setBookingData(initialBookingData)
     setSubmitError('')
-    setSubmitNotice('')
     setValidationError(null)
-    setBookingSubmitted(false)
-    // A fresh booking gets a fresh idempotency key.
-    idempotencyKeyRef.current =
-      (typeof crypto !== 'undefined' && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : `bk_${Date.now()}_${Math.random().toString(36).slice(2)}`
   }
 
   /** @param {number[] | undefined} [overrideExtras] */
   const submitBooking = async (overrideExtras) => {
-    if (submitLockRef.current || submitting || bookingSubmitted) return
-    submitLockRef.current = true
     setSubmitting(true)
     setSubmitError('')
-    setSubmitNotice('')
 
     const { workshop, service, date, time, carDetails, extras } = bookingData
     const effectiveExtras = Array.isArray(overrideExtras) ? overrideExtras : extras
@@ -362,11 +299,9 @@ export default function BookingForm({ isVip = false }) {
     const selectedAddonNames = []
     if (service?.name) jobTypeNames.push(service.name)
     effectiveExtras.forEach((id) => {
-      const addon = addonLookup[id]
-      // "No Add-ons" is a UI convenience, never a real job/add-on.
-      if (addon?.name && !addon.noAddon) {
-        jobTypeNames.push(addon.name)
-        selectedAddonNames.push(addon.name)
+      if (addonLookup[id]?.name) {
+        jobTypeNames.push(addonLookup[id].name)
+        selectedAddonNames.push(addonLookup[id].name)
       }
     })
 
@@ -378,9 +313,7 @@ export default function BookingForm({ isVip = false }) {
     const addonsSummary = selectedAddonNames.length ? selectedAddonNames.join(', ') : 'None'
     const vipNote = isVip && carDetails.vipNumber?.trim() ? ` | VIP Number: ${carDetails.vipNumber.trim()}` : ''
     const vinNote = carDetails.vin?.trim() ? ` | VIN: ${carDetails.vin.trim()}` : ''
-    // Make the flexible choice visible to staff, since the drop-off time is still a firm slot.
-    const timingNote = bookingData.isFlexible ? ' | Timing: Flexible (customer happy with any slot)' : ''
-    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}${timingNote}`
+    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}`
 
     // Get parent_url from query string if present
     let parentPageUrl = '';
@@ -389,10 +322,6 @@ export default function BookingForm({ isVip = false }) {
       parentPageUrl = params.get('parent_url') || '';
     }
     const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
-    // Privacy-safe segmentation for analytics (no PII). Entry point lets Ads/GA4
-    // separate paid-landing-page bookings from the rest. serviceType is the STABLE
-    // service value (e.g. air_conditioning_service), not the display name.
-    const { isQuote, bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
     // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -414,66 +343,38 @@ export default function BookingForm({ isVip = false }) {
       is_flexible: bookingData.isFlexible || false,
       page_url: pageUrl,
       parent_page_url: parentPageUrl,
-      idempotency_key: idempotencyKeyRef.current,
       ...(isVip ? { vip_number: carDetails.vipNumber?.trim() || '' } : {}),
       ...utmParams,
     }
 
     try {
-      // The webhook is now sent server-side inside create-booking (with the booking
-      // id), so it can't be lost on a quote-page redirect and the endpoint isn't
-      // left open to the public.
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/create-booking`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
-      // 202 = received but NOT confirmed (recovery lead) — a valid, non-error response.
-      if (!response.ok && response.status !== 202) {
+      if (!response.ok) {
         const data = await response.json().catch(() => ({}))
         throw new Error(data.error || 'Booking failed')
       }
-      const data = await response.json().catch(() => ({}))
 
-      if (data.confirmed === true) {
-        setBookingSubmitted(true)
-        // Request accepted (MechanicDesk stored the online request — NOT a staff-created diary booking): fire the booking_request_submitted conversion. The PARENT owns the
-        // Ads/GA4 push AND the thank-you redirect, so the iframe never navigates
-        // window.top itself (no navigation race, no refresh re-fire).
-        if (window.parent !== window && PARENT_ORIGIN) {
-          window.parent.postMessage({
-            type: 'carone_booking_request_submitted',
-            booking_reference: data.booking_reference,
-            workshop: workshop?.workshopId || '',
-            service_type: serviceType,
-            booking_entry_point: bookingEntryPoint,
-            landing_page_type: landingPageType,
-          }, PARENT_ORIGIN) // exact origin, never '*'
-        }
-        // Paid landing page: the thank-you redirect must always happen. If the parent
-        // listener acks, it owns the redirect (after its tag fires); otherwise we do it.
-        if (window.parent !== window && isQuote) {
-          setTimeout(() => {
-            if (parentAckRef.current) return
-            try { window.top.location.href = THANK_YOU_URL } catch { /* sandboxed: summary stays */ }
-          }, PARENT_ORIGIN ? PARENT_ACK_TIMEOUT_MS : 0)
-        }
-        // Always show our own confirmation summary as the fallback (parent-absent);
-        // if the parent redirects after its tag fires, that replaces this view.
-        setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+      // Fire webhook in background (non-blocking)
+      fetch(`${import.meta.env.VITE_API_URL}/api/send-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => {})
+
+      if (isQuotePage) {
+        window.top.location.href = THANK_YOU_URL
       } else {
-        // HTTP 202 (sync_failed | sync_unknown): received, not confirmed.
-        // No conversion, no redirect, no summary — a truthful, state-specific notice only.
-        setSubmitNotice(noticeForPendingState(data.state))
+        setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
       }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Something went wrong')
     } finally {
       setSubmitting(false)
-      // Release the lock so a genuinely failed submit can be retried; a successful
-      // one is already blocked by bookingSubmitted.
-      submitLockRef.current = false
     }
   }
 
@@ -498,7 +399,6 @@ export default function BookingForm({ isVip = false }) {
           onSkipAndSubmit={() => submitBooking([])}
           submitting={submitting}
           submitError={submitError}
-          submitNotice={submitNotice}
           validationError={validationError}
           bookingData={bookingData}
           updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}

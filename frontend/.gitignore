@@ -62,4 +62,3 @@ desktop.ini
 # pnpm-lock.yaml
 # package-lock.json
 .vercel
-.env*.local

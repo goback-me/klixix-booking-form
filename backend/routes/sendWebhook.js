@@ -1,12 +1,6 @@
-/**
- * Outbound booking webhook (Zapier / n8n / GoHighLevel, whatever WEBHOOK_URL points at).
- *
- * This is called server-side from create-booking AFTER the booking is stored and
- * forwarded, so the webhook:
- *   - can't be lost when a quote page redirects the browser away, and
- *   - isn't exposed as a public endpoint anyone could POST fake bookings to, and
- *   - carries the booking id so the lead can be matched back to Supabase/MechanicDesk.
- */
+import { Router } from 'express'
+
+const router = Router()
 
 function toStr(value) {
   if (value === null || value === undefined) return ''
@@ -26,15 +20,11 @@ function toAmPmTime(dropOffTime) {
   return `${match[1]} ${hours}:${minutes} ${period}`
 }
 
-export function buildWebhookFields(payload) {
+function buildWebhookFields(payload) {
   const fields = {}
 
   const jobTypeNames = Array.isArray(payload.job_type_names) ? payload.job_type_names : []
   const serviceAddons = Array.isArray(payload.service_addons) ? payload.service_addons : []
-
-  // Booking id first so the lead can be matched back to Supabase / MechanicDesk.
-  fields['Booking Id'] = toStr(payload.booking_id)
-  fields['MechanicDesk Ref'] = toStr(payload.mechanicdesk_ref)
 
   // Human-readable keys requested for webhook integrations.
   fields.Workshop = toStr(payload.workshop)
@@ -58,10 +48,10 @@ export function buildWebhookFields(payload) {
   // UTM/ad params (always include, even if empty)
   const utmKeys = [
     'utm_source','utm_medium','utm_campaign','utm_content','utm_ad','utm_term','matchtype','utm_device','utm_GeoLoc','utm_placement','utm_network','utm_campaign_id','utm_adgroupid','ad_id'
-  ]
+  ];
   utmKeys.forEach((key) => {
-    fields[key] = toStr(payload[key])
-  })
+    fields[key] = toStr(payload[key]);
+  });
 
   // Summary keys plus indexed keys for line-item style display.
   fields['Job Type Names'] = jobTypeNames.join(', ')
@@ -75,8 +65,6 @@ export function buildWebhookFields(payload) {
   })
 
   // Keep machine-friendly originals for downstream compatibility.
-  fields.booking_id = toStr(payload.booking_id)
-  fields.mechanicdesk_ref = toStr(payload.mechanicdesk_ref)
   fields.workshop = toStr(payload.workshop)
   fields.page_url = toStr(payload.page_url)
   fields.parent_page_url = toStr(payload.parent_page_url)
@@ -100,42 +88,47 @@ export function buildWebhookFields(payload) {
   return fields
 }
 
-/**
- * Fire the booking webhook. Never throws — a webhook failure must not fail the
- * booking (which is already saved). Returns a small result for logging.
- * @param {Record<string, any>} payload  the create-booking request body
- * @param {{ bookingId?: string | null, mechanicdeskRef?: string | null }} [extra]
- */
-export async function sendBookingWebhook(payload, extra = {}) {
+router.post('/send-webhook', async (req, res) => {
   const webhookUrl = (process.env.WEBHOOK_URL || process.env.ZAPIER_WEBHOOK_URL || '').trim()
   const webhookMethod = (process.env.WEBHOOK_METHOD || 'POST').trim().toUpperCase()
-  if (!webhookUrl) return { skipped: true }
+
+  if (!webhookUrl) {
+    return res.status(200).json({ skipped: true, message: 'No webhook configured' })
+  }
 
   try {
-    const fields = buildWebhookFields({
-      ...payload,
-      booking_id: extra.bookingId ?? payload.booking_id ?? '',
-      mechanicdesk_ref: extra.mechanicdeskRef ?? '',
-    })
-    const isGetMethod = webhookMethod === 'GET'
+    const fields = buildWebhookFields(req.body || {})
     const params = new URLSearchParams(fields)
+    const isGetMethod = webhookMethod === 'GET'
     const separator = webhookUrl.includes('?') ? '&' : '?'
     const targetUrl = isGetMethod ? `${webhookUrl}${separator}${params.toString()}` : webhookUrl
 
-    const fetchOptions = { method: webhookMethod, signal: AbortSignal.timeout(8000) }
+    const fetchOptions = { method: webhookMethod }
+
     if (!isGetMethod) {
       fetchOptions.headers = { 'Content-Type': 'application/json' }
+      // Send flattened fields as top-level JSON keys.
       fetchOptions.body = JSON.stringify(fields)
     }
 
     const response = await fetch(targetUrl, fetchOptions)
+
     if (!response.ok) {
-      console.warn('Booking webhook failed:', response.status, response.statusText)
-      return { ok: false, status: response.status }
+      console.warn('Webhook failed:', response.status, response.statusText)
+      return res.status(response.status).json({ error: 'Webhook failed' })
     }
-    return { ok: true, status: response.status, sentFieldCount: Object.keys(fields).length }
+
+    const data = await response.json().catch(() => ({ status: 'success' }))
+    return res.status(200).json({
+      ...data,
+      sentAs: webhookMethod,
+      sentAsQuerystring: isGetMethod,
+      sentFieldCount: Object.keys(fields).length,
+    })
   } catch (error) {
-    console.error('Booking webhook error:', error instanceof Error ? error.message : error)
-    return { ok: false, error: 'request failed' }
+    console.error('Webhook error:', error)
+    return res.status(500).json({ error: 'Webhook request failed' })
   }
-}
+})
+
+export default router

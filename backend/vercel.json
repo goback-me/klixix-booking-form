@@ -1,6 +1,3 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-  "headers": [
-    { "source": "/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" } ] }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }

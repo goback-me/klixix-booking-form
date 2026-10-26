@@ -78,10 +78,10 @@ export default function ServiceCard({
                                 : isService
                                   ? 'w-full h-full object-contain object-center rounded-lg p-2'
                                   : isWorkshop
-                                                                        ? 'w-full h-full object-cover rounded-lg'
+                                                                        ? 'w-full h-full object-cover object-top rounded-lg'
                                     : 'w-full h-full object-cover rounded-lg'
                             }
-                                                        style={isWorkshop ? { width: '100%', height: '100%', display: 'block', objectPosition: imagePosition } : {}}
+                                                        style={isWorkshop ? { width: '100%', height: '100%', display: 'block' } : {}}
                             width={imageWidth}
                             height={imageHeight}
                         />

@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarDays, CalendarPlus, Car, Clock3, MapPin, Navigation, User, Wrench } from 'lucide-react'
+import { BadgeCheck, CalendarDays, Clock3, MapPin, User, Wrench } from 'lucide-react'
 import { getAddonsByWorkshopId } from '../../constants/addons'
 import { useEffect } from 'preact/hooks'
 
@@ -8,40 +8,11 @@ const workshopAddresses = {
   woolloongabba: '187 Logan Rd, Woolloongabba, QLD 4102',
 }
 
-// Exact Google Maps business listings (CID), so the address opens the workshop, not a pin.
-/** @type {Record<string, string>} */
-const workshopMapUrls = {
-  hendra: 'https://www.google.com/maps?cid=16246552876592836379',
-  woolloongabba: 'https://www.google.com/maps?cid=1487784059651011892',
-}
-
 /** @param {string} dateStr */
 function formatDate(dateStr) {
   if (!dateStr) return 'Not selected'
   const date = new Date(dateStr + 'T00:00:00')
   return date.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-function pad(n) { return String(n).padStart(2, '0') }
-
-/** Build a Google Calendar "add event" link from the booking date/time (1-hour slot). */
-function calendarUrl({ dateStr, timeStr, title, address }) {
-  if (!dateStr) return null
-  const m = String(timeStr || '').match(/(\d+):(\d+)\s*(AM|PM)/i)
-  let h = 9, min = 0
-  if (m) { h = (parseInt(m[1], 10) % 12) + (/pm/i.test(m[3]) ? 12 : 0); min = parseInt(m[2], 10) }
-  const start = new Date(dateStr + 'T00:00:00'); start.setHours(h, min, 0, 0)
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
-  const fmt = (d) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: title || 'CarOne Automotive booking',
-    dates: `${fmt(start)}/${fmt(end)}`,
-    location: address || '',
-    details: 'Your CarOne Automotive service booking.',
-    ctz: 'Australia/Brisbane',
-  })
-  return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
 /**
@@ -51,20 +22,12 @@ export default function Step5Summary({ bookingData, isVip = false }) {
   const { workshop, service, date, time, isFlexible, carDetails, extras } = bookingData
   const extraServices = getAddonsByWorkshopId(workshop?.workshopId)
 
-  // Exclude the "No Add-ons" convenience option — it's never a real extra.
-  const selectedExtras = extraServices.filter((s) => extras.includes(s.id) && !s.noAddon)
-  const addonsLabel = selectedExtras.length ? selectedExtras.map((s) => s.name).join(', ') : 'None'
+  const selectedExtras = extraServices.filter((s) => extras.includes(s.id))
+  const extrasTotal = selectedExtras.reduce((sum, s) => sum + s.price, 0)
   const workshopAddress = workshop?.workshopId ? (workshopAddresses[workshop.workshopId] || workshop.address) : 'Not selected'
   const contactName = carDetails?.fullName || 'Not provided'
   const contactEmail = carDetails?.email || 'Not provided'
   const contactPhone = carDetails?.phone || 'Not provided'
-  const vehicleRego = [carDetails?.registration, carDetails?.state ? `(${carDetails.state})` : '']
-    .filter(Boolean).join(' ') || 'Not provided'
-  const vehicleMakeModel = [carDetails?.make, carDetails?.model].map((v) => String(v || '').trim()).filter(Boolean).join(' ') || 'Not provided'
-  const vehicleYear = carDetails?.year || 'Not provided'
-  const mapUrl = (workshop?.workshopId && workshopMapUrls[workshop.workshopId]) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(workshopAddress)}`
-  const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(workshopAddress)}`
-  const calUrl = calendarUrl({ dateStr: date, timeStr: time, title: `CarOne Automotive — ${service?.name || 'Service'}`, address: workshopAddress })
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -101,7 +64,7 @@ export default function Step5Summary({ bookingData, isVip = false }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-3 mb-2 sm:mb-6">
           <div className="bg-[#f5f5f5] rounded-xl p-2.5 sm:p-3 min-w-0">
             <p className="text-xs text-gray-700 mb-1 flex items-center gap-1.5">
               <CalendarDays className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
@@ -121,80 +84,47 @@ export default function Step5Summary({ bookingData, isVip = false }) {
               <MapPin className="h-4 w-4 text-[rgba(255,77,36,1)]" strokeWidth={2} />
               Workshop
             </p>
-            <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="text-[13px] sm:text-base font-medium text-[#111] hover:text-[rgba(255,77,36,1)] underline-offset-2 hover:underline break-words leading-[1.25]">{workshopAddress}</a>
+            <p className="text-[13px] sm:text-base font-medium text-[#111] break-words leading-[1.25]">{workshopAddress}</p>
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-3 sm:mb-4">
-          {calUrl && (
-            <a href={calUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[13px] font-medium text-[#111] hover:border-[rgba(255,77,36,0.5)] hover:bg-[#FFF4EB] transition-colors">
-              <CalendarPlus className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Add to calendar
-            </a>
-          )}
-          <a href={dirUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[13px] font-medium text-[#111] hover:border-[rgba(255,77,36,0.5)] hover:bg-[#FFF4EB] transition-colors">
-            <Navigation className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Get directions
-          </a>
-        </div>
-
-        {/* Details — three columns on desktop (no scroll), stacked on mobile */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4">
           <div className="bg-gray-50 rounded-2xl p-3.5 sm:p-4 border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Service
+              <Wrench className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Service details
             </h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Service type</span>
-                <span className="text-gray-900 font-medium text-right">{service?.name || 'Not selected'}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Add-ons</span>
-                <span className="text-gray-900 font-medium text-right min-w-0 break-words">{addonsLabel}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-3.5 sm:p-4 border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Car className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Vehicle
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Registration</span>
-                <span className="text-gray-900 font-medium text-right">{vehicleRego}</span>
-              </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Make &amp; model</span>
-                <span className="text-gray-900 font-medium text-right min-w-0 break-words">{vehicleMakeModel}</span>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Workshop</span>
+                <span className="text-gray-900 font-medium text-right">{workshop?.name || 'Not selected'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Year</span>
-                <span className="text-gray-900 font-medium">{vehicleYear}</span>
+                <span className="text-gray-500">Address</span>
+                <span className="text-gray-900 font-medium text-right max-w-[60%] break-words">{workshopAddress}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Service type</span>
+                <span className="text-gray-900 font-medium">{service?.name || 'Not selected'}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-gray-50 rounded-2xl p-3.5 sm:p-4 border border-gray-100">
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <User className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Contact
+              <User className="h-4 w-4 text-[rgba(255,77,36,1)]" /> Contact information
             </h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Name</span>
-                <span className="text-gray-900 font-medium text-right">{contactName}</span>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Name</span>
+                <span className="text-gray-900 font-medium">{contactName}</span>
               </div>
               <div className="flex justify-between gap-3">
                 <span className="text-gray-500 shrink-0">Email</span>
-                {carDetails?.email
-                  ? <a href={`mailto:${contactEmail}`} className="text-gray-900 font-medium text-right break-all min-w-0 hover:text-[rgba(255,77,36,1)] hover:underline underline-offset-2">{contactEmail}</a>
-                  : <span className="text-gray-900 font-medium text-right break-all min-w-0">{contactEmail}</span>}
+                <span className="text-gray-900 font-medium text-right break-all min-w-0">{contactEmail}</span>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-gray-500 shrink-0">Phone</span>
-                {carDetails?.phone
-                  ? <a href={`tel:${String(contactPhone).replace(/\s+/g, '')}`} className="text-gray-900 font-medium text-right hover:text-[rgba(255,77,36,1)] hover:underline underline-offset-2">{contactPhone}</a>
-                  : <span className="text-gray-900 font-medium text-right">{contactPhone}</span>}
+              <div className="flex justify-between">
+                <span className="text-gray-500">Phone</span>
+                <span className="text-gray-900 font-medium">{contactPhone}</span>
               </div>
               {isVip && carDetails?.vipNumber && (
                 <div className="flex justify-between">

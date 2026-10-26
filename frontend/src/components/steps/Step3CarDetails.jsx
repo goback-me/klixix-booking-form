@@ -2,10 +2,6 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { AlertTriangle, CheckCircle2, Search, User } from 'lucide-react'
 import StepHeader from '../StepHeader'
 import { loadTurnstile, TURNSTILE_SITE_KEY } from '../../lib/turnstile'
-import {
-  LIMITS, sanitizePhone, sanitizeName, sanitizeEmail, sanitizeRegistration,
-  sanitizeMake, sanitizeModel, sanitizeVipNumber,
-} from '../../constants/validation'
 
 const AU_STATES = ['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']
 const VEHICLE_FIELDS = ['make', 'model', 'year']
@@ -35,11 +31,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
   // Snapshot of the last auto-filled values, so we only wipe fields the user hasn't edited.
   const autoFillRef = useRef(/** @type {{ make: string, model: string, year: string, registration?: string } | null} */ (null))
   const lastLookupKeyRef = useRef('')
-  // Always points at the latest form values. The lookup is async, so when it
-  // resolves we must merge the vehicle fields into whatever the customer has
-  // typed *since* (e.g. name/email), not the stale snapshot from when it started.
-  const detailsRef = useRef(details)
-  useEffect(() => { detailsRef.current = details }, [details])
 
   useEffect(() => {
     if (!details.state) {
@@ -274,12 +265,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
       const data = await response.json().catch(() => ({}))
 
       if (response.ok && data.found) {
-        // Merge into the CURRENT form state, not the snapshot from when the lookup
-        // began — otherwise a name/email typed during the lookup would be wiped.
-        const current = detailsRef.current
         const fromVin = searchMode === 'vin'
-        const nextRegistration = fromVin && data.plate ? data.plate : current.registration
-        const nextState = fromVin && data.state && AU_STATES.includes(data.state) ? data.state : current.state
+        const nextRegistration = fromVin && data.plate ? data.plate : details.registration
+        const nextState = fromVin && data.state && AU_STATES.includes(data.state) ? data.state : details.state
         autoFillRef.current = {
           make: data.make || '',
           model: data.model || '',
@@ -290,11 +278,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
         setFoundVehicle({ ...data, via: searchMode })
         setLookupStatus('found')
         updateBookingData('carDetails', {
-          ...current,
+          ...details,
           make: data.make || '',
           model: data.model || '',
           year: data.year || '',
-          vin: data.vin || current.vin || '',
+          vin: data.vin || details.vin || '',
           registration: nextRegistration,
           state: nextState,
           colour: data.colour || '',
@@ -325,16 +313,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
     `w-full px-4 py-3 border rounded-xl bg-[#f5f5f5] placeholder:text-[#ababab] focus:outline-none focus:border-[rgba(255,77,36,1)] ${
       errorFields.includes(field) ? 'border-red-400' : 'border-[#eee]'
     }`
-
-  /** @type {Record<string, string>} */
-  const fieldErrors = validationError?.fieldErrors || {}
-  /** The specific reason a field is wrong (falls back to a required hint). */
-  const fieldError = (field) => (fieldErrors[field] || (errorFields.includes(field) ? 'This field is required.' : ''))
-  /** @param {string} field */
-  const FieldError = (field) => {
-    const msg = fieldError(field)
-    return msg ? <p className="mt-1.5 text-xs text-red-500">{msg}</p> : null
-  }
 
   const foundSummary = foundVehicle
     ? [foundVehicle.year, foundVehicle.make, foundVehicle.model].filter(Boolean).join(' ')
@@ -420,9 +398,8 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   type="text"
                   placeholder="e.g. ABC123"
                   value={details.registration}
-                  onChange={(e) => handleIdentityChange('registration', sanitizeRegistration(e.currentTarget.value))}
+                  onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleLookup() }}
-                  maxLength={LIMITS.registration}
                   className="flex-1 min-w-0 px-3 py-3 bg-white text-[#111] placeholder:text-[#ababab] focus:outline-none"
                   autoCapitalize="characters"
                   autoCorrect="off"
@@ -447,7 +424,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   )}
                 </button>
               </div>
-              {FieldError('registration')}
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-end">
@@ -478,7 +454,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                     {vinLength}/17
                   </span>
                 </div>
-                {FieldError('vin')}
               </div>
               <button
                 type="button"
@@ -514,14 +489,12 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                   type="text"
                   placeholder="e.g. ABC123"
                   value={details.registration}
-                  onChange={(e) => handleIdentityChange('registration', sanitizeRegistration(e.currentTarget.value))}
-                  maxLength={LIMITS.registration}
+                  onChange={(e) => handleIdentityChange('registration', e.currentTarget.value.toUpperCase())}
                   className={`${inputClass('registration')} bg-white!`}
                   autoCapitalize="characters"
                   autoCorrect="off"
                   spellCheck={false}
                 />
-                {FieldError('registration')}
               </div>
               <div className="w-full sm:w-28">
                 <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
@@ -593,14 +566,12 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. ABC123"
                 value={details.registration}
-                onChange={(e) => handleChange('registration', sanitizeRegistration(e.currentTarget.value))}
-                maxLength={LIMITS.registration}
+                onChange={(e) => handleChange('registration', e.currentTarget.value.toUpperCase())}
                 className={inputClass('registration')}
                 autoCapitalize="characters"
                 autoCorrect="off"
                 spellCheck={false}
               />
-              {FieldError('registration')}
             </div>
             <div>
               <label className="block text-sm font-medium font-display text-[#111] mb-2">State</label>
@@ -627,11 +598,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. Mitsubishi"
                 value={details.make}
-                onChange={(e) => handleChange('make', sanitizeMake(e.currentTarget.value))}
-                maxLength={LIMITS.make}
+                onChange={(e) => handleChange('make', e.currentTarget.value)}
                 className={inputClass('make')}
               />
-              {FieldError('make')}
             </div>
 
             <div>
@@ -642,11 +611,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="e.g. Triton"
                 value={details.model}
-                onChange={(e) => handleChange('model', sanitizeModel(e.currentTarget.value))}
-                maxLength={LIMITS.model}
+                onChange={(e) => handleChange('model', e.currentTarget.value)}
                 className={inputClass('model')}
               />
-              {FieldError('model')}
             </div>
 
             <div>
@@ -663,7 +630,6 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 onChange={(e) => handleYearChange(e.currentTarget.value)}
                 className={inputClass('year')}
               />
-              {FieldError('year')}
             </div>
           </div>
         )}
@@ -684,12 +650,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               type="text"
               placeholder="First and last name"
               value={details.fullName}
-              onChange={(e) => handleChange('fullName', sanitizeName(e.currentTarget.value))}
-              maxLength={LIMITS.name}
-              autoComplete="name"
+              onChange={(e) => handleChange('fullName', e.currentTarget.value)}
               className={inputClass('fullName')}
             />
-            {FieldError('fullName')}
           </div>
 
           <div>
@@ -700,14 +663,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               type="email"
               placeholder="yourname@example.com"
               value={details.email}
-              onChange={(e) => handleChange('email', sanitizeEmail(e.currentTarget.value))}
-              maxLength={LIMITS.email}
-              autoComplete="email"
-              autoCapitalize="off"
-              spellCheck={false}
+              onChange={(e) => handleChange('email', e.currentTarget.value)}
               className={inputClass('email')}
             />
-            {FieldError('email')}
           </div>
 
           <div className="md:col-span-2">
@@ -716,16 +674,11 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
             </label>
             <input
               type="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="e.g. 0412345678"
+              placeholder="+61"
               value={details.phone}
-              onChange={(e) => handleChange('phone', sanitizePhone(e.currentTarget.value))}
-              maxLength={11}
-              autoComplete="tel"
+              onChange={(e) => handleChange('phone', e.currentTarget.value)}
               className={inputClass('phone')}
             />
-            {FieldError('phone')}
           </div>
 
           {isVip && (
@@ -737,11 +690,9 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
                 type="text"
                 placeholder="Enter your VIP number"
                 value={details.vipNumber || ''}
-                onChange={(e) => handleChange('vipNumber', sanitizeVipNumber(e.currentTarget.value))}
-                maxLength={LIMITS.vipNumber}
+                onChange={(e) => handleChange('vipNumber', e.currentTarget.value)}
                 className={inputClass('vipNumber')}
               />
-              {FieldError('vipNumber')}
             </div>
           )}
 
@@ -752,13 +703,8 @@ export default function Step3CarDetails({ bookingData, updateBookingData, valida
               placeholder="e.g. Strange noise when braking, service light is on, car pulls to the left ... "
               value={details.additionalInfo}
               onChange={(e) => handleChange('additionalInfo', e.currentTarget.value)}
-              maxLength={LIMITS.additionalInfo}
               className="w-full p-3 border border-gray-300 rounded-xl resize-none focus:outline-none focus:border-[rgba(255,77,36,1)]"
             />
-            <p className="mt-1 text-right text-xs text-gray-400 tabular-nums">
-              {(details.additionalInfo || '').length}/{LIMITS.additionalInfo}
-            </p>
-            {FieldError('additionalInfo')}
           </div>
         </div>
       </div>
