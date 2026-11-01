@@ -101,3 +101,15 @@ export function getAddonLookupByWorkshopId(workshopId) {
   lookup[AC_ADDON.id] = AC_ADDON
   return lookup
 }
+
+/**
+ * The real add-ons a customer picked, in the order they picked them — the same
+ * list the booking note sends to MechanicDesk ("No Add-ons" excluded).
+ * @param {string | undefined} workshopId
+ * @param {number[]} extras
+ * @returns {Addon[]}
+ */
+export function selectedAddons(workshopId, extras) {
+  const lookup = getAddonLookupByWorkshopId(workshopId)
+  return (Array.isArray(extras) ? extras : []).map((id) => lookup[id]).filter((a) => a && !a.noAddon)
+}

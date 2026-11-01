@@ -1,6 +1,17 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { AC_ADDON, addonsForPrimary, getAddonLookupByWorkshopId, applyAcAddonRule } from './addons.js'
+import { AC_ADDON, addonsForPrimary, getAddonLookupByWorkshopId, applyAcAddonRule, selectedAddons } from './addons.js'
+
+test('summary add-ons include the A/C add-on (same list as the MechanicDesk note)', () => {
+  // The live test on 2 Nov 2026: all 7 Gabba add-ons ticked; the summary used to drop A/C.
+  const names = selectedAddons('woolloongabba', [AC_ADDON.id, 101, 102, 103, 105, 106, 107]).map((a) => a.name)
+  assert.equal(names.length, 7)
+  assert.equal(names[0], AC_ADDON.name)
+  assert.ok(names.includes('Tyre rotation & balancing'))
+  assert.deepEqual(selectedAddons('woolloongabba', [109]), []) // "No Add-ons" is never listed
+  assert.deepEqual(selectedAddons('hendra', [AC_ADDON.id]).map((a) => a.name), [AC_ADDON.name])
+  assert.deepEqual(selectedAddons('hendra', undefined), [])
+})
 
 const PRIMARIES = ['general_service', 'vehicle_repair', 'roadworthy_certificate', 'pre_purchase_inspection', 'other_enquiry']
 

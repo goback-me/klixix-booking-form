@@ -1,5 +1,5 @@
 import { BadgeCheck, CalendarDays, CalendarPlus, Car, Clock3, MapPin, Navigation, User, Wrench } from 'lucide-react'
-import { getAddonsByWorkshopId } from '../../constants/addons'
+import { selectedAddons } from '../../constants/addons'
 import { brisbaneNow } from '../../constants/bookingWindow'
 import { useEffect } from 'preact/hooks'
 
@@ -50,10 +50,9 @@ function calendarUrl({ dateStr, timeStr, title, address }) {
  */
 export default function Step5Summary({ bookingData, isVip = false }) {
   const { workshop, service, date, time, isFlexible, carDetails, extras } = bookingData
-  const extraServices = getAddonsByWorkshopId(workshop?.workshopId)
-
-  // Exclude the "No Add-ons" convenience option — it's never a real extra.
-  const selectedExtras = extraServices.filter((s) => extras.includes(s.id) && !s.noAddon)
+  // Same lookup as the note sent to MechanicDesk, which includes the A/C add-on
+  // (it isn't in the workshop's base list). Exclude "No Add-ons" — never a real extra.
+  const selectedExtras = selectedAddons(workshop?.workshopId, extras)
   const addonsLabel = selectedExtras.length ? selectedExtras.map((s) => s.name).join(', ') : 'None'
   const workshopAddress = workshop?.workshopId ? (workshopAddresses[workshop.workshopId] || workshop.address) : 'Not selected'
   const contactName = carDetails?.fullName || 'Not provided'
