@@ -35,12 +35,13 @@ const steps = [Step0Workshop, Step1Service, Step2DateTime, Step3CarDetails, Step
  *   bookingData: BookingData,
  *   updateBookingData: (key: string, value: unknown) => void,
  *   prefetchedUnavailableDays: string[] | null,
+ *   prefetchedSameDay: boolean,
  *   prefetchDatesLoading: boolean,
  * }} StepContentProps
  */
 
 /** @param {StepContentProps & { isVip?: boolean, isQuotePage?: boolean }} props */
-export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, submitNotice, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchDatesLoading, isVip, isQuotePage }) {
+export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAdvance, onReset, onSubmit, onSkipAndSubmit, submitting, submitError, submitNotice, validationError, bookingData, updateBookingData, prefetchedUnavailableDays, prefetchedSameDay, prefetchDatesLoading, isVip, isQuotePage }) {
   const CurrentStep = /** @type {any} */ (steps[step])
   const isSummaryStep = step === steps.length - 1
   const isSubmitStep = step === steps.length - 2
@@ -87,6 +88,7 @@ export default function StepContent({ step, onNext, onPrev, onGoToStep, onAutoAd
               onPrev={onPrev}
               onGoToStep={onGoToStep}
               prefetchedUnavailableDays={prefetchedUnavailableDays}
+              prefetchedSameDay={prefetchedSameDay}
               prefetchDatesLoading={prefetchDatesLoading}
               isVip={isVip}
             />

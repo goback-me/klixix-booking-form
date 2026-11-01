@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import StepHeader from '../StepHeader'
+import {
+  MORNING_SLOTS, AFTERNOON_SLOTS, brisbaneNow, isSlotOpen, isTodayOpen, firstOpenSlot, earliestDateYmd,
+} from '../../constants/bookingWindow'
 
-const AU_TIMEZONE = 'Australia/Brisbane'
 const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 const monthNames = [
   'January',
@@ -26,37 +28,13 @@ const monthNames = [
  * }} TimeSlot
  */
 
-/** @type {TimeSlot[]} */
-const morningSlots = [
-  { label: '8:00 AM', available: true },
-  { label: '8:30 AM', available: true },
-  { label: '9:00 AM', available: true },
-  { label: '9:30 AM', available: true },
-  { label: '10:00 AM', available: true },
-  { label: '10:30 AM',  available: true },
-  { label: '11:00 AM', available: true },
-  { label: '11:30 AM', available: true },
-  // { label: '12:00 PM', available: true },
-]
-
-/** @type {TimeSlot[]} */
-const afternoonSlots = [
-  { label: '1:00 PM', available: true },
-  { label: '1:30 PM',  available: true},
-  { label: '2:00 PM', available: true },
-  { label: '2:30 PM', available: true },
-  { label: '3:00 PM', available: true },
-  { label: '3:30 PM', available: true },
-  { label: '4:00 PM', available: true},
-  { label: '4:30 PM', available: true },
-  // { label: '5:00 PM', available: true },
-]
-
-/** @returns {string} */
+/**
+ * First slot of the day. The date & time step then swaps it for a later one
+ * if it is too soon for a same-day booking.
+ * @returns {string}
+ */
 export function getFirstAvailableTimeSlotLabel() {
-  const allSlots = [...morningSlots, ...afternoonSlots]
-  const nearest = allSlots.find((s) => s.available && !s.disabled)
-  return nearest?.label || ''
+  return MORNING_SLOTS[0]
 }
 
 /** @param {number | string} value */
@@ -83,27 +61,6 @@ function parseYmd(value) {
     year: Number.parseInt(match[1], 10),
     month: Number.parseInt(match[2], 10),
     day: Number.parseInt(match[3], 10),
-  }
-}
-
-function getAustralianDateParts(date = new Date()) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: AU_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
-  })
-
-  const parts = formatter.formatToParts(date)
-  const valueMap = Object.fromEntries(parts.map((part) => [part.type, part.value]))
-
-  return {
-    year: Number.parseInt(valueMap.year, 10),
-    month: Number.parseInt(valueMap.month, 10),
-    day: Number.parseInt(valueMap.day, 10),
-    hour: Number.parseInt(valueMap.hour, 10),
   }
 }
 
@@ -212,12 +169,15 @@ function SlotButton({ slot, selected, onClick }) {
 }
 
 /**
- * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, prefetchedUnavailableDays?: string[] | null, prefetchDatesLoading?: boolean, onGoToStep?: (step: number) => void }} props
+ * @param {{ bookingData: any, updateBookingData: (key: string, value: any) => void, prefetchedUnavailableDays?: string[] | null, prefetchedSameDay?: boolean, prefetchDatesLoading?: boolean, onGoToStep?: (step: number) => void }} props
  */
-export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchDatesLoading = false, onPrev, onGoToStep }) {
+export default function Step2DateTime({ bookingData, updateBookingData, prefetchedUnavailableDays = null, prefetchedSameDay = false, prefetchDatesLoading = false, onPrev, onGoToStep }) {
   const [currentTime, setCurrentTime] = useState(() => new Date())
-  const nowInAu = useMemo(() => getAustralianDateParts(currentTime), [currentTime])
-  const todayYmd = formatYmd(nowInAu.year, nowInAu.month, nowInAu.day)
+  const nowInAu = useMemo(() => brisbaneNow(currentTime), [currentTime])
+  const todayYmd = nowInAu.ymd
+  // Same-day bookings are switched on per workshop by the API; off until it says so.
+  const [sameDay, setSameDay] = useState(Boolean(prefetchedSameDay))
+  const todayOpen = isTodayOpen(nowInAu, sameDay)
   const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
   useEffect(() => {
@@ -244,27 +204,28 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
     const newVal = typeof val === 'function' ? val(isFlexible) : val
     updateBookingData('isFlexible', newVal)
     if (newVal) {
-      const nearest = getFirstAvailableTimeSlotLabel()
+      const nearest = firstOpenSlot({ dateYmd: selectedDate, now: nowInAu, sameDay })
       if (nearest) updateBookingData('time', nearest)
     }
   }
-  const [blockedDates, setBlockedDates] = useState(() => {
-    if (prefetchedUnavailableDays !== null && !prefetchDatesLoading) {
-      return new Set([...prefetchedUnavailableDays, todayYmd])
-    }
-    return new Set([todayYmd])
-  })
+  // Days closed by MechanicDesk or the server's booking rules. Today is also
+  // closed client-side once no slot is 2+ hours away (see isDayBlocked).
+  const [blockedDates, setBlockedDates] = useState(() => (
+    prefetchedUnavailableDays !== null && !prefetchDatesLoading ? new Set(prefetchedUnavailableDays) : new Set()
+  ))
+  /** @param {string} ymd */
+  const isDayBlocked = (ymd) => blockedDates.has(ymd) || (ymd === todayYmd && !todayOpen)
   const [loadingBlockedDays, setLoadingBlockedDays] = useState(
     prefetchedUnavailableDays === null || prefetchDatesLoading
   )
   const [visibleStartIndex, setVisibleStartIndex] = useState(0)
   const [showCalendarPopup, setShowCalendarPopup] = useState(false)
 
+  const earliestYmd = earliestDateYmd(nowInAu, sameDay)
   const earliestSelectableDate = useMemo(() => {
-    const offset = nowInAu.hour >= 16 ? 2 : 1
-    const baseDate = addDays(new Date(Date.UTC(nowInAu.year, nowInAu.month - 1, nowInAu.day)), offset)
-    return moveToNextBusinessDay(baseDate)
-  }, [nowInAu.hour, nowInAu.year, nowInAu.month, nowInAu.day])
+    const parts = parseYmd(earliestYmd)
+    return moveToNextBusinessDay(new Date(Date.UTC(parts.year, parts.month - 1, parts.day)))
+  }, [earliestYmd])
 
   const latestSelectableDate = useMemo(
     () => addDays(earliestSelectableDate, 179),
@@ -284,11 +245,11 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
         day: date.getUTCDate(),
         month: date.getUTCMonth() + 1,
         year: date.getUTCFullYear(),
-        disabled: blockedDates.has(ymd) || isWeekendUtcDate(date),
+        disabled: isDayBlocked(ymd) || isWeekendUtcDate(date),
       })
     }
     return options
-  }, [earliestSelectableDate, blockedDates])
+  }, [earliestSelectableDate, blockedDates, todayYmd, todayOpen])
 
   const visibleCount = 5
   const visibleDates = useMemo(
@@ -296,15 +257,26 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
     [dateOptions, visibleStartIndex, visibleCount]
   )
 
+  // Slots for the selected date; today's are greyed out until 2+ hours away.
+  /** @param {string[]} labels @returns {TimeSlot[]} */
+  const slotsFor = (labels) => labels.map((label) => ({
+    label,
+    available: true,
+    disabled: !isSlotOpen({ dateYmd: selectedDate, label, now: nowInAu, sameDay }),
+  }))
+  const morningSlots = slotsFor(MORNING_SLOTS)
+  const afternoonSlots = slotsFor(AFTERNOON_SLOTS)
+
   useEffect(() => {
-    if (!selectedTime) {
-      // Pre-select the first genuinely available slot (not a hardcoded 8:00 AM
-      // that could be closed), highlighted so the customer can change it — keeps
-      // booking quick while still being a real, bookable choice.
-      const firstAvailable = getFirstAvailableTimeSlotLabel()
-      if (firstAvailable) setSelectedTime(firstAvailable)
+    if (!selectedDate) return
+    // Pre-select the first genuinely available slot, highlighted so the customer
+    // can change it. Also replaces a slot that has just become too soon (the
+    // minute timer) or doesn't exist on a newly picked date / workshop.
+    if (!selectedTime || !isSlotOpen({ dateYmd: selectedDate, label: selectedTime, now: nowInAu, sameDay })) {
+      const firstAvailable = firstOpenSlot({ dateYmd: selectedDate, now: nowInAu, sameDay })
+      if (firstAvailable !== selectedTime) setSelectedTime(firstAvailable)
     }
-  }, [selectedTime])
+  }, [selectedDate, selectedTime, nowInAu, sameDay])
 
   const workshopId = useMemo(() => {
     if (bookingData?.workshop?.workshopId) {
@@ -318,7 +290,8 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
   useEffect(() => {
     // Prefetch from parent is ready — use it, no duplicate request
     if (prefetchedUnavailableDays !== null && !prefetchDatesLoading) {
-      setBlockedDates(new Set([...prefetchedUnavailableDays, todayYmd]))
+      setBlockedDates(new Set(prefetchedUnavailableDays))
+      setSameDay(Boolean(prefetchedSameDay))
       setLoadingBlockedDays(false)
       return
     }
@@ -358,15 +331,15 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
         const payload = await response.json()
         const unavailableDays = Array.isArray(payload.unavailable_days) ? payload.unavailable_days : []
 
-        // Business rule: today is always blocked.
-        const merged = new Set([...unavailableDays, todayYmd])
-
         if (isMounted) {
-          setBlockedDates(merged)
+          setBlockedDates(new Set(unavailableDays))
+          setSameDay(payload.same_day === true)
         }
       } catch (error) {
+        // Fail safe: no same-day, so today stays closed.
         if (isMounted) {
-          setBlockedDates(new Set([todayYmd]))
+          setBlockedDates(new Set())
+          setSameDay(false)
         }
         console.error('Failed to fetch blocked days', error)
       } finally {
@@ -381,7 +354,7 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
     return () => {
       isMounted = false
     }
-  }, [apiBaseUrl, workshopId, todayYmd, prefetchedUnavailableDays, prefetchDatesLoading])
+  }, [apiBaseUrl, workshopId, todayYmd, prefetchedUnavailableDays, prefetchedSameDay, prefetchDatesLoading])
 
   useEffect(() => {
     if (loadingBlockedDays) return
@@ -623,11 +596,11 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
                     {calendarCells.map((cell, index) => {
                       const dateYmd = formatYmd(viewedYear, viewedMonth, cell.day)
                       const isSelected = cell.inCurrentMonth && selectedDate === dateYmd
-                      const isBlockedByApi = blockedDates.has(dateYmd)
+                      const isBlockedByApi = isDayBlocked(dateYmd)
                       const isWeekend = cell.inCurrentMonth && isWeekendUtcDate(new Date(Date.UTC(viewedYear, viewedMonth - 1, cell.day)))
-                      const isPastOrToday = dateYmd <= todayYmd
+                      const isPast = dateYmd < todayYmd
                       const isBeforeEarliestAllowed = isBeforeYmd(dateYmd, dateToYmd(earliestSelectableDate))
-                      const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPastOrToday || isBeforeEarliestAllowed || loadingBlockedDays
+                      const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPast || isBeforeEarliestAllowed || loadingBlockedDays
 
                       return (
                         <button
@@ -727,11 +700,11 @@ export default function Step2DateTime({ bookingData, updateBookingData, prefetch
               {calendarCells.map((cell, index) => {
                 const dateYmd = formatYmd(viewedYear, viewedMonth, cell.day)
                 const isSelected = cell.inCurrentMonth && selectedDate === dateYmd
-                const isBlockedByApi = blockedDates.has(dateYmd)
+                const isBlockedByApi = isDayBlocked(dateYmd)
                 const isWeekend = cell.inCurrentMonth && isWeekendUtcDate(new Date(Date.UTC(viewedYear, viewedMonth - 1, cell.day)))
-                const isPastOrToday = dateYmd <= todayYmd
+                const isPast = dateYmd < todayYmd
                 const isBeforeEarliestAllowed = isBeforeYmd(dateYmd, dateToYmd(earliestSelectableDate))
-                const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPastOrToday || isBeforeEarliestAllowed || loadingBlockedDays
+                const isDisabled = !cell.inCurrentMonth || isBlockedByApi || isWeekend || isPast || isBeforeEarliestAllowed || loadingBlockedDays
 
                 return (
                   <button

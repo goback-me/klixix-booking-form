@@ -4,6 +4,7 @@ import StepContent from './StepContent'
 import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
 import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
 import { noticeForPendingState } from '../constants/notices'
+import { brisbaneNow } from '../constants/bookingWindow'
 import {
   validateName, validateEmail, validatePhone, validateRegistration, validateMake,
   validateModel, validateYear, validateVin, validateVipNumber, validateAdditionalInfo,
@@ -72,6 +73,22 @@ function formatDropOffTime(dateStr, timeStr) {
   if (period === 'PM' && hours !== 12) hours += 12
   if (period === 'AM' && hours === 12) hours = 0
   return `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}`
+}
+
+/**
+ * Apply one field change. Changing workshop clears the date and time, because
+ * each workshop has its own booking window (e.g. same-day at Woolloongabba only).
+ * @param {BookingData} prev
+ * @param {keyof BookingData} key
+ * @param {any} value
+ * @returns {BookingData}
+ */
+function applySelection(prev, key, value) {
+  const next = withAcAddonRule(prev, key, value)
+  if (key === 'workshop' && prev.workshop?.workshopId !== value?.workshopId) {
+    return { ...next, date: '', time: '' }
+  }
+  return next
 }
 
 /** @type {BookingData} */
@@ -246,6 +263,8 @@ export default function BookingForm({ isVip = false }) {
 
   const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
   const [prefetchedUnavailableDays, setPrefetchedUnavailableDays] = useState(/** @type {string[] | null} */ (null))
+  // Whether this workshop takes same-day bookings (set server-side per workshop).
+  const [prefetchedSameDay, setPrefetchedSameDay] = useState(false)
   const [prefetchDatesLoading, setPrefetchDatesLoading] = useState(false)
   useEffect(() => {
     const workshopId = bookingData.workshop?.workshopId
@@ -253,11 +272,14 @@ export default function BookingForm({ isVip = false }) {
     let isMounted = true
     setPrefetchDatesLoading(true)
     setPrefetchedUnavailableDays(null)
+    setPrefetchedSameDay(false)
     const params = new URLSearchParams({ workshop: workshopId, in_days: '180' })
     fetch(`${apiBaseUrl}/api/unavailable-days?${params.toString()}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((payload) => {
-        if (isMounted) setPrefetchedUnavailableDays(Array.isArray(payload.unavailable_days) ? payload.unavailable_days : [])
+        if (!isMounted) return
+        setPrefetchedUnavailableDays(Array.isArray(payload.unavailable_days) ? payload.unavailable_days : [])
+        setPrefetchedSameDay(payload.same_day === true)
       })
       .catch(() => { if (isMounted) setPrefetchedUnavailableDays([]) })
       .finally(() => { if (isMounted) setPrefetchDatesLoading(false) })
@@ -269,7 +291,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const updateBookingData = (key, value) => {
-    setBookingData((prev) => withAcAddonRule(prev, key, value))
+    setBookingData((prev) => applySelection(prev, key, value))
     setValidationError(null)
   }
 
@@ -296,6 +318,7 @@ export default function BookingForm({ isVip = false }) {
       return
     }
     setValidationError(null)
+    setSubmitError('')
     setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
   }
 
@@ -304,7 +327,7 @@ export default function BookingForm({ isVip = false }) {
    * @param {BookingData[keyof BookingData]} value
    */
   const autoAdvanceWithSelection = (key, value) => {
-    setBookingData((prev) => withAcAddonRule(prev, key, value))
+    setBookingData((prev) => applySelection(prev, key, value))
     setValidationError(null)
     // Delay auto-advance to Step 2 to allow prefetch to complete
     const delay = key === 'service' ? 350 : 0
@@ -380,7 +403,9 @@ export default function BookingForm({ isVip = false }) {
     const vinNote = carDetails.vin?.trim() ? ` | VIN: ${carDetails.vin.trim()}` : ''
     // Make the flexible choice visible to staff, since the drop-off time is still a firm slot.
     const timingNote = bookingData.isFlexible ? ' | Timing: Flexible (customer happy with any slot)' : ''
-    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}${timingNote}`
+    // Flag same-day requests so the team calls the customer to confirm the drop-off.
+    const sameDayNote = date === brisbaneNow().ymd ? ' | SAME-DAY BOOKING: please call the customer to confirm drop-off time' : ''
+    const enrichedNote = `User Comments: ${userComment} | Service: ${jobTypeNames[0]} | Add-ons: ${addonsSummary}${vinNote}${vipNote}${timingNote}${sameDayNote}`
 
     // Get parent_url from query string if present
     let parentPageUrl = '';
@@ -432,6 +457,11 @@ export default function BookingForm({ isVip = false }) {
       // 202 = received but NOT confirmed (recovery lead) — a valid, non-error response.
       if (!response.ok && response.status !== 202) {
         const data = await response.json().catch(() => ({}))
+        // The chosen time is no longer bookable (e.g. a same-day slot went stale
+        // while they filled in their details): take them back to pick another.
+        if (response.status === 400 && data.field === 'drop_off_time') {
+          setCurrentStep(2)
+        }
         throw new Error(data.error || 'Booking failed')
       }
       const data = await response.json().catch(() => ({}))
@@ -503,6 +533,7 @@ export default function BookingForm({ isVip = false }) {
           bookingData={bookingData}
           updateBookingData={/** @type {(key: string, value: unknown) => void} */ (updateBookingData)}
           prefetchedUnavailableDays={prefetchedUnavailableDays}
+          prefetchedSameDay={prefetchedSameDay}
           prefetchDatesLoading={prefetchDatesLoading}
           isVip={isVip}
           isQuotePage={isQuotePage}

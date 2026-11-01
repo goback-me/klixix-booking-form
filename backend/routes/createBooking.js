@@ -8,9 +8,9 @@ import {
   validateName, validateEmail, validatePhone, validateRegistration, validateMake,
   validateModel, validateYear, validateVin, validateVipNumber, toAuPhoneDigits,
 } from '../lib/validation.js'
+import { dropOffError } from '../lib/bookingWindow.js'
 
 const router = Router()
-const AU_TIMEZONE = 'Australia/Brisbane'
 const MECHANICDESK_URL = 'https://www.mechanicdesk.com.au/booking_requests/create_booking'
 
 /** Normalise a valid AU number to compact 0-leading form (e.g. 0412345678) for MechanicDesk SMS. */
@@ -95,48 +95,17 @@ async function postMechanicDesk(token, bookingFields) {
   }
 }
 
-function toYmdInTimezone(date, timeZone) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-
-  return formatter.format(date)
-}
-
-function addDaysToYmd(ymd, amount) {
-  const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!match) return null
-
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])))
-  date.setUTCDate(date.getUTCDate() + amount)
-  return toYmdInTimezone(date, AU_TIMEZONE)
-}
-
-function getBrisbaneBookingCutoffYmd() {
-  const now = new Date()
-  const todayInBrisbane = toYmdInTimezone(now, AU_TIMEZONE)
-  const currentHour = Number.parseInt(
-    new Intl.DateTimeFormat('en-AU', {
-      timeZone: AU_TIMEZONE,
-      hour: '2-digit',
-      hour12: false,
-    }).formatToParts(now).find((part) => part.type === 'hour')?.value || '0',
-    10
-  )
-
-  return currentHour >= 16 ? addDaysToYmd(todayInBrisbane, 2) : addDaysToYmd(todayInBrisbane, 1)
-}
-
-function parseDropOffDate(value) {
+/** "DD/MM/YYYY HH:MM" → { dateYmd, slotMinutes }, or null. */
+export function parseDropOff(value) {
   if (typeof value !== 'string') return null
 
-  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+\d{2}:\d{2}$/)
+  const match = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/)
   if (!match) return null
+  const hours = Number(match[4])
+  const minutes = Number(match[5])
+  if (hours > 23 || minutes > 59) return null
 
-  return `${match[3]}-${match[2]}-${match[1]}`
+  return { dateYmd: `${match[3]}-${match[2]}-${match[1]}`, slotMinutes: hours * 60 + minutes }
 }
 
 /** Adapt a shared validate* rule (returns '' or a message) to express-validator. */
@@ -146,7 +115,7 @@ const rule = (check) => (value) => {
   return true
 }
 
-const validate = [
+export const validate = [
   body('workshop').trim().notEmpty().withMessage('Workshop is required'),
   body('name').trim().notEmpty().withMessage('Name is required').bail().custom(rule(validateName)),
   body('phone').trim().notEmpty().withMessage('Phone is required').bail().custom(rule(validatePhone)),
@@ -162,20 +131,14 @@ const validate = [
     .isIn(['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS', 'NT', 'ACT']).withMessage('Invalid state'),
   body('note').optional().isLength({ max: 4000 }).withMessage('Note is too long'),
   body('drop_off_time').trim().notEmpty().withMessage('Drop off time is required'),
-  body('drop_off_time').custom((value) => {
-    const selectedDate = parseDropOffDate(value)
-    if (!selectedDate) {
+  body('drop_off_time').custom((value, { req }) => {
+    const dropOff = parseDropOff(value)
+    if (!dropOff) {
       throw new Error('Invalid drop off time')
     }
 
-    const earliestAllowedDate = getBrisbaneBookingCutoffYmd()
-    if (!earliestAllowedDate) {
-      throw new Error('Unable to validate booking date')
-    }
-
-    if (selectedDate < earliestAllowedDate) {
-      throw new Error('Bookings for tomorrow close after 4:00 PM Brisbane time')
-    }
+    const msg = dropOffError({ workshopId: req.body.workshop, ...dropOff })
+    if (msg) throw new Error(msg)
 
     return true
   }),
@@ -264,7 +227,9 @@ export async function processBooking({ payload, token, idemKey, deps = realDeps 
 router.post('/create-booking', validate, async (req, res) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array()[0].msg })
+    const first = errors.array()[0]
+    // `field` lets the form send the customer back to the right step.
+    return res.status(400).json({ error: first.msg, field: first.path })
   }
 
   // Normalise the phone once (stored row + MechanicDesk both get a clean AU number).

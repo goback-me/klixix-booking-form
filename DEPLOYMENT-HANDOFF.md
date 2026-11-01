@@ -57,6 +57,12 @@ Keep existing:
 - `ALLOWED_ORIGIN` = the production frontend origin, exactly, no trailing slash
   (e.g. `https://embed.car-one.com.au`)
 
+Optional — same-day bookings (see `backend/lib/bookingWindow.js`):
+- `SAME_DAY_BOOKING_WORKSHOPS` = `woolloongabba` turns on same-day bookings (slots
+  2+ hours away) and removes the 4 PM next-day cutoff for that workshop. Unset or
+  empty = every workshop keeps the old rules. Comma-separated for more workshops.
+  Takes effect on restart; the form picks it up from `/api/unavailable-days`.
+
 Add — InfoAgent rego (starts in free sandbox; flip to live when ready):
 - `INFOAGENT_ENV` = `test` (set to `live` to go billable)
 - `INFOAGENT_TEST_CLIENT_ID`, `INFOAGENT_TEST_CLIENT_SECRET` — sandbox (existing)

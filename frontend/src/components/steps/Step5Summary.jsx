@@ -1,5 +1,6 @@
 import { BadgeCheck, CalendarDays, CalendarPlus, Car, Clock3, MapPin, Navigation, User, Wrench } from 'lucide-react'
 import { getAddonsByWorkshopId } from '../../constants/addons'
+import { brisbaneNow } from '../../constants/bookingWindow'
 import { useEffect } from 'preact/hooks'
 
 /** @type {Record<string, string>} */
@@ -65,6 +66,7 @@ export default function Step5Summary({ bookingData, isVip = false }) {
   const mapUrl = (workshop?.workshopId && workshopMapUrls[workshop.workshopId]) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(workshopAddress)}`
   const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(workshopAddress)}`
   const calUrl = calendarUrl({ dateStr: date, timeStr: time, title: `CarOne Automotive — ${service?.name || 'Service'}`, address: workshopAddress })
+  const isSameDay = Boolean(date) && date === brisbaneNow().ymd
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -86,6 +88,12 @@ export default function Step5Summary({ bookingData, isVip = false }) {
           <br />
           has been received!
         </p>
+
+        {isSameDay && (
+          <p className="mx-auto mb-2 sm:mb-4 max-w-xl rounded-xl bg-[#FFF4EB] px-3 py-2 text-center text-[13px] sm:text-sm text-[#111]">
+            <span className="font-semibold">Same-day booking</span> — our team will call you shortly to confirm your drop-off time.
+          </p>
+        )}
 
         <div className="flex justify-center mb-2 sm:mb-8">
           <div className="relative">

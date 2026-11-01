@@ -1,27 +1,7 @@
 import { Router } from 'express'
+import { AU_TIMEZONE, toYmdInTimezone, ruleBlockedDays, isSameDayEnabled } from '../lib/bookingWindow.js'
 
 const router = Router()
-const AU_TIMEZONE = 'Australia/Brisbane'
-
-function addDaysToYmd(ymd, amount) {
-  const parsed = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (!parsed) return null
-
-  const date = new Date(Date.UTC(Number(parsed[1]), Number(parsed[2]) - 1, Number(parsed[3])))
-  date.setUTCDate(date.getUTCDate() + amount)
-  return toYmdInTimezone(date, AU_TIMEZONE)
-}
-
-function toYmdInTimezone(date, timeZone) {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-
-  return formatter.format(date)
-}
 
 function normalizeDateString(value) {
   if (typeof value !== 'string') return null
@@ -99,26 +79,15 @@ router.get('/unavailable-days', async (req, res) => {
       .map(normalizeDateString)
       .filter(Boolean)
 
-    const todayInAu = toYmdInTimezone(new Date(), AU_TIMEZONE)
-    const currentHour = Number.parseInt(
-      new Intl.DateTimeFormat('en-AU', {
-        timeZone: AU_TIMEZONE,
-        hour: '2-digit',
-        hour12: false,
-      }).formatToParts(new Date()).find((part) => part.type === 'hour')?.value || '0',
-      10
-    )
-    const cutoffBlockedDay = currentHour >= 16 ? addDaysToYmd(todayInAu, 1) : null
-    const unavailableDays = Array.from(new Set([
-      ...upstreamDays,
-      todayInAu,
-      ...(cutoffBlockedDay ? [cutoffBlockedDay] : []),
-    ]))
+    // Today / tomorrow closures come from the workshop's booking rules
+    // (lib/bookingWindow.js); MechanicDesk-blocked days always stay blocked.
+    const unavailableDays = Array.from(new Set([...upstreamDays, ...ruleBlockedDays(workshopId)]))
 
     return res.status(200).json({
       workshop: workshopId,
       timezone: AU_TIMEZONE,
       unavailable_days: unavailableDays,
+      same_day: isSameDayEnabled(workshopId),
     })
   } catch (error) {
     console.error('Unavailable days API error:', error)
