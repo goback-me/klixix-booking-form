@@ -7,7 +7,7 @@
  *
  * It receives an ACCEPTED booking-request event from the booking iframe (MechanicDesk stored the request — not yet a staff-created diary booking), validates it,
  * pushes ONE `booking_request_submitted` into the dataLayer (GTM fires Ads/GA4), acks the
- * iframe, and (for paid landing pages only) controls the redirect AFTER the tag.
+ * iframe. It does NOT redirect to a thank-you page.
  * No customer PII is ever read or forwarded.
  */
 (function () {
@@ -19,7 +19,6 @@
 
   // Set per environment. Production values shown; use the authorised STAGING origins on staging.
   var EMBED_ORIGIN   = 'https://embed.car-one.com.au';
-  var THANK_YOU_URL  = 'https://car-one.com.au/thank-you-booking/';
 
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var ALLOWED_WORKSHOPS = ['hendra', 'woolloongabba'];
@@ -70,13 +69,7 @@
     });
 
     ack(event.source, ref);
-
-    // 9) Parent-controlled redirect — paid landing pages only, AFTER the tag fires.
-    if (entry === 'paid_landing') {
-      var done = false;
-      var go = function () { if (!done) { done = true; window.location.href = THANK_YOU_URL; } };
-      window.dataLayer.push({ event: 'booking_request_submitted_redirect', eventCallback: go, eventTimeout: 1500 });
-      setTimeout(go, 1800); // bounded fallback if GTM/eventCallback is unavailable
-    }
+    // No thank-you redirect: the customer stays on the page and sees the form's
+    // own confirmation summary.
   }, false);
 })();
