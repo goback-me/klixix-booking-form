@@ -48,15 +48,10 @@ const AU_STATES = /** @type {const} */ (['QLD', 'NSW', 'VIC', 'SA', 'WA', 'TAS',
 // QUOTE_PAGE_PATHS now lives in ../constants/services (shared with the service list
 // and the testable conversion-field helper).
 
-// The parent site now owns the conversion + the thank-you redirect. The iframe
+// The parent site owns the conversion push. The iframe
 // only posts a confirmed event to this EXACT origin (never '*'); set per env.
 // Production: https://car-one.com.au ; staging: the authorised staging parent origin.
 const PARENT_ORIGIN = import.meta.env.VITE_PARENT_ORIGIN || ''
-
-// Fallback for paid landing pages: if the parent listener hasn't acked within this
-// window (not installed, or VITE_PARENT_ORIGIN unset), the iframe redirects itself.
-const THANK_YOU_URL = 'https://car-one.com.au/thank-you-booking/'
-const PARENT_ACK_TIMEOUT_MS = 2500
 
 /**
  * @param {string} dateStr
@@ -223,19 +218,6 @@ export default function BookingForm({ isVip = false }) {
     window.parent.postMessage({ type: 'carone-resize', height }, PARENT_ORIGIN || '*')
   }, [currentStep])
 
-  // Ack from the parent: it has taken over the conversion/redirect. The iframe does
-  // NOT block its UX on this — it already shows the summary on confirmation — but on
-  // paid landing pages a missing ack triggers the iframe's own thank-you redirect.
-  const parentAckRef = useRef(false)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !PARENT_ORIGIN) return
-    const onMessage = (e) => {
-      if (e.origin !== PARENT_ORIGIN) return
-      if (e?.data?.type === 'carone_booking_ack') parentAckRef.current = true
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [])
   // On mount, read UTM/ad params and parent_url from iframe URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -417,7 +399,7 @@ export default function BookingForm({ isVip = false }) {
     // Privacy-safe segmentation for analytics (no PII). Entry point lets Ads/GA4
     // separate paid-landing-page bookings from the rest. serviceType is the STABLE
     // service value (e.g. air_conditioning_service), not the display name.
-    const { isQuote, bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
+    const { bookingEntryPoint, landingPageType, serviceType } = deriveConversionFields({ parentUrl: parentPageUrl, service })
     // Merge UTM/ad params into payload
     const payload = {
       workshop: workshop?.workshopId || '',
@@ -469,8 +451,7 @@ export default function BookingForm({ isVip = false }) {
       if (data.confirmed === true) {
         setBookingSubmitted(true)
         // Request accepted (MechanicDesk stored the online request — NOT a staff-created diary booking): fire the booking_request_submitted conversion. The PARENT owns the
-        // Ads/GA4 push AND the thank-you redirect, so the iframe never navigates
-        // window.top itself (no navigation race, no refresh re-fire).
+        // Ads/GA4 push; the iframe never navigates window.top itself.
         if (window.parent !== window && PARENT_ORIGIN) {
           window.parent.postMessage({
             type: 'carone_booking_request_submitted',
@@ -481,16 +462,8 @@ export default function BookingForm({ isVip = false }) {
             landing_page_type: landingPageType,
           }, PARENT_ORIGIN) // exact origin, never '*'
         }
-        // Paid landing page: the thank-you redirect must always happen. If the parent
-        // listener acks, it owns the redirect (after its tag fires); otherwise we do it.
-        if (window.parent !== window && isQuote) {
-          setTimeout(() => {
-            if (parentAckRef.current) return
-            try { window.top.location.href = THANK_YOU_URL } catch { /* sandboxed: summary stays */ }
-          }, PARENT_ORIGIN ? PARENT_ACK_TIMEOUT_MS : 0)
-        }
-        // Always show our own confirmation summary as the fallback (parent-absent);
-        // if the parent redirects after its tag fires, that replaces this view.
+        // The iframe never redirects to a thank-you page (including on landing
+        // pages): it always shows its own confirmation summary.
         setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
       } else {
         // HTTP 202 (sync_failed | sync_unknown): received, not confirmed.
