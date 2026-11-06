@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import Sidebar from './Sidebar'
 import StepContent from './StepContent'
+import { getPresetWorkshop } from '../constants/workshops'
 import { getAddonLookupByWorkshopId, applyAcAddonRule as withAcAddonRule } from '../constants/addons'
 import { QUOTE_PAGE_PATHS, AC_LANDING_PATH, getServiceByValue, deriveConversionFields } from '../constants/services'
 import { noticeForPendingState } from '../constants/notices'
@@ -180,9 +181,23 @@ function validateStep(step, bookingData, isVip = false) {
   }
 }
 
+/**
+ * Workshop preset by the embedding page (e.g. a Hendra page passes ?workshop=hendra).
+ * Invalid or missing → null, and the form behaves exactly as before.
+ */
+function readPresetWorkshop() {
+  if (typeof window === 'undefined') return null
+  return getPresetWorkshop(new URLSearchParams(window.location.search).get('workshop'))
+}
+
 export default function BookingForm({ isVip = false }) {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [bookingData, setBookingData] = useState(initialBookingData)
+  // With a preset workshop the customer skips the workshop step and starts on
+  // Service; they can still go back and switch workshop if they want to.
+  const [presetWorkshop] = useState(readPresetWorkshop)
+  const firstStep = presetWorkshop ? 1 : 0
+  const freshBookingData = () => (presetWorkshop ? { ...initialBookingData, workshop: presetWorkshop } : initialBookingData)
+  const [currentStep, setCurrentStep] = useState(firstStep)
+  const [bookingData, setBookingData] = useState(freshBookingData)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   // Truthful "received but not confirmed" notice (HTTP 202) — NOT an error, NOT a conversion.
@@ -336,8 +351,8 @@ export default function BookingForm({ isVip = false }) {
   }
 
   const resetSteps = () => {
-    setCurrentStep(0)
-    setBookingData(initialBookingData)
+    setCurrentStep(firstStep)
+    setBookingData(freshBookingData())
     setSubmitError('')
     setSubmitNotice('')
     setValidationError(null)

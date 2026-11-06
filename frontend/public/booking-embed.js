@@ -19,6 +19,20 @@
   var isOpen = false;
   var previousBodyOverflow = '';
   var currentMode = '';
+  var currentWorkshop = '';
+
+  // Optional preset workshop. Set it page-wide on a workshop's own pages:
+  //   <script>window.CARONE_BOOKING_WORKSHOP = 'hendra';</script>   (or 'woolloongabba' / 'gabba')
+  // or per button: <a data-action="open-booking" data-workshop="hendra">.
+  // Anything else is ignored and the form shows the normal workshop step.
+  var WORKSHOP_ALIASES = { hendra: 'hendra', woolloongabba: 'woolloongabba', gabba: 'woolloongabba' };
+  function normaliseWorkshop(value) {
+    var key = String(value || '').trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(WORKSHOP_ALIASES, key) ? WORKSHOP_ALIASES[key] : '';
+  }
+  function pageWorkshop() {
+    return normaliseWorkshop((/** @type {any} */ (window)).CARONE_BOOKING_WORKSHOP);
+  }
 
   function getIframeOrigin() {
     if (!iframe || !iframe.src) return FORM_ORIGIN;
@@ -30,8 +44,9 @@
     }
   }
 
-  function buildIframeSrc(mode) {
+  function buildIframeSrc(mode, workshop) {
     var baseUrl = mode === 'vip' ? FORM_URL + '/?mode=vip' : FORM_URL;
+    if (workshop) baseUrl += (baseUrl.includes('?') ? '&' : '?') + 'workshop=' + encodeURIComponent(workshop);
     var parentUrl = encodeURIComponent(window.location.href);
     var sep = baseUrl.includes('?') ? '&' : '?';
     var utmParams = [
@@ -47,12 +62,13 @@
     return baseUrl + sep + 'parent_url=' + parentUrl + (utmString ? ('&' + utmString) : '');
   }
 
-  function createOverlay(mode) {
+  function createOverlay(mode, workshop) {
     if (overlay) {
-      // If mode changed, update iframe src
-      if (iframe && mode !== currentMode) {
+      // If mode or preset workshop changed, update iframe src
+      if (iframe && (mode !== currentMode || workshop !== currentWorkshop)) {
         currentMode = mode;
-        iframe.src = buildIframeSrc(mode);
+        currentWorkshop = workshop;
+        iframe.src = buildIframeSrc(mode, workshop);
       }
       return;
     }
@@ -114,9 +130,10 @@
     
 
     currentMode = mode;
+    currentWorkshop = workshop;
     iframe = document.createElement('iframe');
     iframe.id = 'carone-booking-frame';
-    iframe.src = buildIframeSrc(mode);
+    iframe.src = buildIframeSrc(mode, workshop);
     iframe.title = 'Book a service';
     iframe.allow = 'payment';
     iframe.setAttribute('loading', 'lazy');
@@ -146,8 +163,9 @@
     });
   }
 
-  function openBooking(mode) {
-    createOverlay(mode || 'regular');
+  // openBooking(mode?, workshop?) — workshop falls back to the page-wide setting.
+  function openBooking(mode, workshop) {
+    createOverlay(mode || 'regular', normaliseWorkshop(workshop) || pageWorkshop());
     if (!overlay) return;
     overlay.classList.add('open');
     previousBodyOverflow = document.body.style.overflow;
@@ -178,7 +196,7 @@
       btn.addEventListener('click', function (e) {
         e.preventDefault();
         var mode = btn.dataset.bookingType === 'vip' ? 'vip' : 'regular';
-        openBooking(mode);
+        openBooking(mode, btn.dataset.workshop);
       });
     });
   }

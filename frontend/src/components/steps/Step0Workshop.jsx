@@ -1,4 +1,5 @@
 import ServiceCard from '../ServiceCard'
+import { WORKSHOPS } from '../../constants/workshops'
 
 // Both workshops open Mon–Fri, 8:00am–5:00pm (closed weekends).
 const OPEN_HOUR = 8
@@ -38,33 +39,7 @@ export default function Step0Workshop({ bookingData, updateBookingData, onAutoAd
   const hoursStatus = getWorkshopHoursStatus()
 
 
-  const services = [
-    {
-      id: 1,
-      workshopId: 'hendra',
-      name: 'Hendra workshop',
-      address: '238 Nudgee Rd, Hendra QLD 4011, Australia',
-      // Exact Car One Hendra listing (Google Maps CID), so the address opens the
-      // business rather than a plain pin on the street.
-      mapUrl: 'https://www.google.com/maps?cid=16246552876592836379',
-      time: hoursStatus,
-      phone:'(07) 3607 0215',
-      image: "./hendra-workshop.webp",
-      imagePos: "center 38%",
-    },
-    {
-      id: 2,
-      workshopId: 'woolloongabba',
-      name: 'Woolloongabba workshop',
-      address: '187 Logan Rd, Woolloongabba QLD 4102, Australia',
-      // Exact Car One Woolloongabba listing (Google Maps CID).
-      mapUrl: 'https://www.google.com/maps?cid=1487784059651011892',
-      time: hoursStatus,
-      phone:'(07) 3607 0215',
-      image: "./woolloongabba-workshop.webp",
-      imagePos: "center 78%",
-    },
-  ]
+  const services = WORKSHOPS.map((w) => ({ ...w, time: hoursStatus }))
 
   return (
     <div className="p-3 sm:p-5 md:p-6 pb-3 sm:pb-8 flex flex-col min-w-0">
